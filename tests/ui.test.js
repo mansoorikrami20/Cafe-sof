@@ -47,6 +47,14 @@ async function ownerHarness(menu,fetch){
   const h=contextFor(fs.readFileSync('dist/admin/index.html','utf8'),fetch||(async url=>({ok:true,json:async()=>url.endsWith('session')?{authenticated:true,email:'test@example.test'}:structuredClone(menu)})));
   h.run(fs.readFileSync('dist/admin/catalog-editor.js','utf8'));h.run(fs.readFileSync('dist/admin/admin.js','utf8'));await tick();return h;
 }
+test('admin navigation opens QR from the published catalog without discarding an unsaved edit',async()=>{
+  const h=await ownerHarness(initialMenu,async url=>({ok:true,json:async()=>url.endsWith('session')?{authenticated:true,email:'test@example.test'}:url==='/api/catalog'?{schemaVersion:2,connected:true,dishes:[],products:[],branches:[]}:structuredClone(initialMenu)}));
+  h.run(fs.readFileSync('dist/admin/vendor/qrcode.js','utf8'));h.run(fs.readFileSync('dist/admin/menu-tools.js','utf8'));
+  h.run('state.menu.dishes[0].price=477;setDirty()');
+  h.document.querySelector('[data-page=qr]').dispatchEvent(new h.window.Event('click',{bubbles:true}));await tick();await tick();
+  assert.equal(h.document.querySelectorAll('.qr-card').length,1);assert(h.document.querySelector('.qr-code svg'));assert.equal(h.run('state.menu.dishes[0].price'),477);assert.equal(h.run('state.dirty'),true);
+  h.document.querySelector('[data-page=connections]').dispatchEvent(new h.window.Event('click',{bubbles:true}));await tick();await tick();assert.match(h.document.querySelector('.main').textContent,/0 опубликовано/);assert.match(h.document.querySelector('.main').textContent,/Не подключена/);
+});
 test('cabinet edits four branch slots, rejects incomplete activation and keeps iiko explicitly disconnected',async()=>{
   const h=await ownerHarness(initialMenu);h.run("state.page='branches';render();editBranch('branch-1')");
   assert.equal(h.document.querySelectorAll('[data-branch-edit]').length,4);assert.match(h.document.querySelector('#editor').textContent,/iiko · не подключена/);
