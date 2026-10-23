@@ -20,7 +20,11 @@ export function createHandler({readStore,writeStore,connected,env=process.env,no
       if(action==='session'&&req.method==='GET')return send(200,{configured:true,needsSetup:!doc.admin,authenticated,...(authenticated?{email:doc.admin.email}:{})});
       if(action==='menu'&&req.method==='GET'){
         if(!authenticated)fail(401,'Войдите в кабинет.');
-        const {admin,attempts,...menu}=doc;return send(200,menu);
+        const menu=cleanMenu(doc);return send(200,{...menu,revision:doc.revision,updatedAt:doc.updatedAt,history:(doc.history||[]).map(h=>({...cleanMenu(h),revision:h.revision,updatedAt:h.updatedAt}))});
+      }
+      if(action==='price-list'&&req.method==='GET'){
+        if(!authenticated)fail(401,'Войдите в кабинет.');
+        return send(200,{categories:initialMenu.categories,dishes:initialMenu.dishes});
       }
       if(req.method!=='POST')fail(405,'Требуется POST-запрос.');
       const body=req.body;
@@ -59,6 +63,7 @@ export function createHandler({readStore,writeStore,connected,env=process.env,no
       }
       if(action==='save'){
         if(!Number.isInteger(body.revision)||body.revision!==doc.revision)fail(409,'Меню уже изменено. Скачайте свой черновик и обновите страницу.');
+        if(doc.schemaVersion===2&&body.schemaVersion!==2)fail(409,'Каталог обновлён. Скачайте черновик и обновите страницу перед сохранением.');
         const menu=cleanMenu(body);
         const next={...doc,...menu,revision:doc.revision+1,updatedAt:new Date(now()).toISOString()};
         // Keep the previous five menu revisions, never including credentials in the backup.
