@@ -5,27 +5,7 @@ export const hash=value=>createHash('sha256').update(value).digest('hex');
 export function fail(status,message){const e=new Error(message);e.status=status;throw e;}
 export function equal(a,b){if(typeof a!=='string'||typeof b!=='string')return false;const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);}
 export function text(value,label,max=160,required=false){if(typeof value!=='string'||value.length>max||(required&&!value.trim()))fail(400,`Проверьте поле «${label}».`);return value.trim();}
-export function cleanMenu(input){
-  if(!input||!Array.isArray(input.dishes)||!Array.isArray(input.categories)||!input.settings)fail(400,'Некорректные данные меню.');
-  if(input.dishes.length>500||input.categories.length>40||!input.categories.length)fail(400,'Допускается до 500 блюд и от 1 до 40 категорий.');
-  const id=v=>{if(typeof v!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(v))fail(400,'Некорректный идентификатор.');return v;};
-  const categoryIds=new Set();
-  const categories=input.categories.map(c=>{const k=id(c.id);if(categoryIds.has(k))fail(400,'Категории не должны повторяться.');categoryIds.add(k);return {id:k,name:text(c.name,'Название категории',60,true)};});
-  if(new Set(categories.map(c=>c.name.toLowerCase())).size!==categories.length)fail(400,'Названия категорий не должны повторяться.');
-  const ids=new Set();
-  const dishes=input.dishes.map(d=>{
-    const k=id(d.id);if(ids.has(k))fail(400,'Блюда не должны повторяться.');ids.add(k);
-    if(!categoryIds.has(d.categoryId))fail(400,'Выберите существующую категорию блюда.');
-    if(!Number.isFinite(d.price)||d.price<0||d.price>100000||Math.abs(Math.round(d.price*100)-d.price*100)>0.000001)fail(400,'Цена должна быть от 0 до 100 000 ₽, не более двух знаков после запятой.');
-    if(typeof d.available!=='boolean'||typeof d.published!=='boolean')fail(400,'Проверьте доступность блюда.');
-    const imageUrl=text(d.imageUrl||'','Фото',200);
-    if(imageUrl&&!/^\/assets\/[a-z0-9_-]+\.(webp|png)$/.test(imageUrl)&&!/^\/api\/media\?id=[a-f0-9-]{36}\.(png|webp|jpg)$/.test(imageUrl))fail(400,'Используйте загруженную фотографию.');
-    return {id:k,name:text(d.name,'Название блюда',120,true),price:d.price,weight:text(d.weight||'','Вес',40),categoryId:d.categoryId,desc:text(d.desc||'','Описание',1500),imageUrl,available:d.available,published:d.published};
-  });
-  const settings=Object.fromEntries(['name','tagline','phone','address','hours','deliveryNote'].map(k=>[k,text(input.settings[k]||'',k,k==='deliveryNote'?600:180,k==='name')]));
-  return {categories,dishes,settings};
-}
-export function publicMenu(doc){return {revision:doc.revision,updatedAt:doc.updatedAt,settings:doc.settings,categories:doc.categories,dishes:doc.dishes.filter(d=>d.published)};}
+export {cleanMenu,publicMenu} from './catalog.js';
 export async function passwordRecord(email,password){
   email=text(email,'Email',254,true).toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))fail(400,'Проверьте email.');

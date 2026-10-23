@@ -9,6 +9,7 @@
     "@vercel/blob": "2.7.0"
   },
   "devDependencies": {
+    "jsqr": "1.4.0",
     "linkedom": "^0.18.14"
   }
 }
