@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import {initialMenu} from '../server/seed.js';
 import {cleanMenu,publicMenu,hash,passwordRecord,signSession,verifySession} from '../server/core.js';
 import {createHandler} from '../server/manage.js';
-const env={SOF_SETUP_HASH:hash('test-setup-key-with-32-characters'),SOF_SESSION_SECRET:'test-only-session-secret-not-for-deployment'};
+const env={SOF_REQUIRE_LOGIN_CODE:'0',SOF_REQUIRE_VERIFIED_EMAIL:'0',SOF_SETUP_HASH:hash('test-setup-key-with-32-characters'),SOF_SESSION_SECRET:'test-only-session-secret-not-for-deployment'};
 function harness(){
   let stored=null,version=0;
   const readStore=async()=>({doc:structuredClone(stored||initialMenu),etag:stored?'"'+version+'"':null});
   const writeStore=async(doc,etag)=>{if(etag!==(stored?'"'+version+'"':null)){const e=new Error('Conflict');e.status=409;throw e;}stored=structuredClone(doc);version++;};
-  const handle=createHandler({env,connected:()=>true,readStore,writeStore});
+  const handle=createHandler({passwordCheck:async()=>{},env,connected:()=>true,readStore,writeStore});
   async function call(action,{method='GET',body,cookie='',origin='https://example.test'}={}){const headers={host:'example.test',origin,'content-type':'application/json','x-sof-admin':'1',cookie,'x-forwarded-for':'203.0.113.1'};const output={headers:{},statusCode:200};const res={setHeader(k,v){output.headers[k]=v;},status(v){output.statusCode=v;return this;},json(v){output.body=v;return output;}};await handle({method,query:{action},body,headers},res);return output;}
   return {call,read:()=>stored,corrupt:()=>{version++;}};
 }

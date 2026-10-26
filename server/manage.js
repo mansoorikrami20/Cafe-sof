@@ -2,8 +2,11 @@ import {createHmac,randomUUID} from 'node:crypto';
 import {cleanMenu,equal,fail,hash,passwordRecord,signSession,verifyPassword,verifySession} from './core.js';
 import {initialMenu} from './seed.js';
 import {createAccountEmail,mailConfig,requiresEmail} from './account-email.js';
-export function createHandler({readStore,writeStore,connected,env=process.env,now=Date.now,sendMail}){
-  const accountAction=createAccountEmail({readStore,writeStore,env,now,sendMail});
+import {checkPasswordSafety} from './password-safety.js';
+import {createLoginCode,requiresLoginCode} from './login-code.js';
+export function createHandler({readStore,writeStore,connected,env=process.env,now=Date.now,sendMail,passwordCheck=checkPasswordSafety}){
+  const accountAction=createAccountEmail({readStore,writeStore,env,now,sendMail,passwordCheck});
+  const loginCode=createLoginCode({readStore,writeStore,env,now,sendMail});
   return async function handler(req,res){
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     const send=(status,data)=>res.status(status).json(data);
@@ -37,10 +40,18 @@ export function createHandler({readStore,writeStore,connected,env=process.env,no
         if(['reset-password','verify-email'].includes(action))res.setHeader('Set-Cookie','sof_admin=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0');
         return send(200,result);
       }
+      if(action==='verify-login'){
+        if(JSON.stringify(body).length>4096)fail(400,'Слишком большой запрос.');
+        const admin=await loginCode.verify(body.challenge,body.code);
+        if(requiresEmail(env)&&!admin.emailVerifiedAt)fail(403,'Подтвердите почту перед входом.');
+        res.setHeader('Set-Cookie',`sof_admin=${signSession(admin,env.SOF_SESSION_SECRET,now())}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`);
+        return send(200,{ok:true});
+      }
       if(action==='setup'){
         if(doc.admin)fail(409,'Владелец уже зарегистрирован. Войдите по email и паролю.');
         if(typeof body.setupKey!=='string'||body.setupKey.length>128||!equal(hash(body.setupKey),env.SOF_SETUP_HASH))fail(403,'Нужна личная ссылка настройки владельца.');
         if(requiresEmail(env)&&!mailConfig(env))fail(503,'Сначала подключите отправку писем для подтверждения почты.');
+        await passwordCheck(body.password);
         const admin=await passwordRecord(body.email,body.password);
         doc={...doc,admin,updatedAt:new Date(now()).toISOString()};await writeStore(doc,etag);
         if(requiresEmail(env))return send(200,{ok:true,verificationRequired:true});
@@ -64,6 +75,7 @@ export function createHandler({readStore,writeStore,connected,env=process.env,no
         if(!recorded)fail(429,'Попробуйте ещё раз через минуту.');
         if(!await verifyPassword(doc.admin,body.email,body.password))fail(401,'Неверный email или пароль.');
         if(requiresEmail(env)&&!doc.admin.emailVerifiedAt)return send(403,{error:'Подтвердите почту перед входом в кабинет.',verificationRequired:true});
+        if(requiresLoginCode(env))return send(200,await loginCode.begin(doc.admin));
         res.setHeader('Set-Cookie',`sof_admin=${signSession(doc.admin,env.SOF_SESSION_SECRET,now())}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`);
         return send(200,{ok:true});
       }
