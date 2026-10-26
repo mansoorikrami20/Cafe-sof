@@ -1,7 +1,8 @@
 import {createHmac,randomBytes} from 'node:crypto';
 import {equal,fail,hash,passwordRecord} from './core.js';
+import {checkPasswordSafety} from './password-safety.js';
 
-export const requiresEmail=env=>env.SOF_REQUIRE_VERIFIED_EMAIL==='1';
+export const requiresEmail=env=>env.SOF_REQUIRE_VERIFIED_EMAIL==='1'||env.SOF_REQUIRE_LOGIN_CODE!=='0';
 export function mailConfig(env){
   try{
     const origin=new URL(env.SOF_PUBLIC_ORIGIN);
@@ -10,12 +11,12 @@ export function mailConfig(env){
     return {origin:origin.origin,from:env.SOF_EMAIL_FROM,key:env.RESEND_API_KEY};
   }catch{return null;}
 }
-export async function sendAccountEmail({to,purpose,token,id,config},fetcher=fetch){
-  const url=`${config.origin}/admin#${purpose}=${encodeURIComponent(token)}`;
-  const title=purpose==='reset'?'Смена пароля кабинета «Соф»':'Подтверждение почты кабинета «Соф»';
+export async function sendAccountEmail({to,purpose,token,code,id,config},fetcher=fetch){
+  const url=purpose==='login'?'':`${config.origin}/admin#${purpose}=${encodeURIComponent(token)}`;
+  const title=purpose==='login'?'Код входа в кабинет «Соф»':purpose==='reset'?'Смена пароля кабинета «Соф»':'Подтверждение почты кабинета «Соф»';
   // Text-only transactional mail: no tracking pixel, user HTML or provider response in logs.
   try{
-    const response=await fetcher('https://api.resend.com/emails',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${config.key}`,'Content-Type':'application/json','Idempotency-Key':`sof-account/${id}`},body:JSON.stringify({from:config.from,to:[to],subject:title,text:`${title}\n\nОткройте ссылку и подтвердите действие:\n${url}\n\nСсылка действует 15 минут и используется один раз. Если вы не запрашивали это письмо, ничего делать не нужно.`})});
+    const response=await fetcher('https://api.resend.com/emails',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${config.key}`,'Content-Type':'application/json','Idempotency-Key':`sof-account/${id}`},body:JSON.stringify({from:config.from,to:[to],subject:title,text:purpose==='login'?`${title}\n\nВаш код: ${code}\n\nКод действует 5 минут и используется один раз. Никому его не сообщайте. Если вы не входили в кабинет, смените пароль.`:`${title}\n\nОткройте ссылку и подтвердите действие:\n${url}\n\nСсылка действует 15 минут и используется один раз. Если вы не запрашивали это письмо, ничего делать не нужно.`})});
     if(!response.ok)fail(503,'Не удалось отправить письмо. Повторите запрос позже.');
     await response.body?.cancel();
   }catch{fail(503,'Не удалось отправить письмо. Повторите запрос позже.');}
@@ -23,7 +24,7 @@ export async function sendAccountEmail({to,purpose,token,id,config},fetcher=fetc
 
 const message='Если email совпадает с почтой владельца, на него отправлена ссылка. Проверьте также папку «Спам». Ссылка действует 15 минут.';
 const invalid=()=>fail(400,'Ссылка недействительна или устарела. Запросите новое письмо.');
-export function createAccountEmail({readStore,writeStore,env,now=Date.now,sendMail=sendAccountEmail}){
+export function createAccountEmail({readStore,writeStore,env,now=Date.now,sendMail=sendAccountEmail,passwordCheck=checkPasswordSafety}){
   async function update(change){
     for(let i=0;i<4;i++){
       const {doc,etag}=await readStore();
@@ -74,6 +75,7 @@ export function createAccountEmail({readStore,writeStore,env,now=Date.now,sendMa
       const purpose=action==='reset-password'?'reset':'verify';
       // Check before the costly password hash, then recheck against the latest ETag before writing.
       const {doc}=await readStore();validLink(doc.admin,purpose,body.token);
+      if(purpose==='reset')await passwordCheck(body.password);
       const replacement=purpose==='reset'?await passwordRecord(doc.admin.email,body.password):null;
       await update(latest=>{
         validLink(latest.admin,purpose,body.token);

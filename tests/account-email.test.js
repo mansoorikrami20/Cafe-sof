@@ -7,13 +7,13 @@ import {mailConfig,sendAccountEmail} from '../server/account-email.js';
 import {createMediaHandler} from '../api/media.js';
 import {createIntegrationsHandler} from '../server/integrations.js';
 const password='test-only-password-before-reset';
-const env={SOF_SESSION_SECRET:'TEST-ONLY-SESSION',SOF_SETUP_HASH:hash('TEST-ONLY-SETUP'),RESEND_API_KEY:'TEST-ONLY-MAIL',SOF_EMAIL_FROM:'test@example.test',SOF_PUBLIC_ORIGIN:'https://example.test',SOF_REQUIRE_VERIFIED_EMAIL:'1'};
+const env={SOF_REQUIRE_LOGIN_CODE:'0',SOF_REQUIRE_VERIFIED_EMAIL:'0',SOF_SESSION_SECRET:'TEST-ONLY-SESSION',SOF_SETUP_HASH:hash('TEST-ONLY-SETUP'),RESEND_API_KEY:'TEST-ONLY-MAIL',SOF_EMAIL_FROM:'test@example.test',SOF_PUBLIC_ORIGIN:'https://example.test',SOF_REQUIRE_VERIFIED_EMAIL:'1'};
 async function harness({mail=true,owner=true}={}){
   let doc={...structuredClone(initialMenu),...(owner?{admin:await passwordRecord('owner@example.test',password)}:{})},version=1,time=1792800000000;
   const mails=[],settings={...env,...(!mail?{RESEND_API_KEY:''}:{})};
   const readStore=async()=>({doc:structuredClone(doc),etag:String(version)});
   const writeStore=async(next,etag)=>{if(etag!==String(version)){const e=new Error();e.status=409;throw e;}doc=structuredClone(next);version++;};
-  const handle=createHandler({env:settings,connected:()=>true,readStore,writeStore,now:()=>time,sendMail:async data=>mails.push(data)});
+  const handle=createHandler({passwordCheck:async()=>{},env:settings,connected:()=>true,readStore,writeStore,now:()=>time,sendMail:async data=>mails.push(data)});
   async function call(action,body,{cookie='',origin='https://example.test',ip='192.0.2.1',method=body?'POST':'GET'}={}){
     const out={status:200,headers:{}};await handle({method,query:{action},body,headers:{host:'example.test',origin,cookie,'x-sof-admin':'1','content-type':'application/json','x-vercel-forwarded-for':ip}},{setHeader(k,v){out.headers[k]=v;},status(v){out.status=v;return this;},json(v){out.body=v;}});return out;
   }

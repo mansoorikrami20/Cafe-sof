@@ -71,7 +71,7 @@ test('full catalog persists across handler restarts; two sessions cannot overwri
     let serial=0;
     const readStore=async()=>{try{const data=JSON.parse(await readFile(file,'utf8'));return {doc:data.doc,etag:data.etag};}catch(error){if(error.code!=='ENOENT')throw error;return {doc:clone(),etag:null};}};
     const writeStore=async(doc,etag)=>{const old=await readStore();if(old.etag!==etag){const error=new Error('Conflict');error.status=409;throw error;}await writeFile(file,JSON.stringify({doc,etag:String(++serial)}));};
-    const deps={readStore,writeStore,connected:()=>true,env:{SOF_SETUP_HASH:hash('test-one-time-key'),SOF_SESSION_SECRET:'test-only-do-not-deploy'}};
+    const deps={passwordCheck:async()=>{},readStore,writeStore,connected:()=>true,env:{SOF_REQUIRE_LOGIN_CODE:'0',SOF_REQUIRE_VERIFIED_EMAIL:'0',SOF_SETUP_HASH:hash('test-one-time-key'),SOF_SESSION_SECRET:'test-only-do-not-deploy'}};
     let call=client(createHandler(deps));
     assert.equal((await call('save',{body:clone()})).status,401);
     assert.equal((await call('price-list')).status,401);
