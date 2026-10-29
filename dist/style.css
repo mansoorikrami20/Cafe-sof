@@ -31,3 +31,26 @@
 .sof-banner-dots button.active{width:17px;border-radius:8px;background:#fff}
 @media (max-width:360px){.sof-banner-slide{height:158px;padding-left:19px}.sof-banner-copy h2{font-size:22px}.sof-banner-slide img{height:142px}}
 @media (prefers-reduced-motion:reduce){.sof-banner-track{scroll-behavior:auto}.sof-banner-dots button{transition:none}}
+
+/* SOF spacing refinement: search, banner, categories */
+.search{margin-bottom:16px!important}
+.search label{height:46px}
+.search input{font-size:12.5px}
+.search .circle{width:46px;height:46px}
+.sof-banner{margin-bottom:20px;border-radius:22px;box-shadow:0 12px 26px #29231c0d}
+.arc-shell{height:96px;margin:0 -20px 14px;overflow:hidden}
+.arc-backdrop{background:radial-gradient(ellipse 118% 92% at 50% 126%,transparent 70%,#eeeeeb 71%,#f6f6f3 88%,transparent 89%);opacity:.55}
+.arc-track{height:94px;padding-top:5px}
+.arc-category{flex-basis:59px;height:69px;gap:5px;font-size:10.5px}
+.arc-category img{width:41px;height:35px}
+.arc-category b{width:20px;height:3px;margin-top:0}
+.arc-category.active{font-size:11px}
+.grid{padding-top:12px}
+@media (max-width:360px){
+  .search{margin-bottom:14px!important}
+  .sof-banner{margin-bottom:17px}
+  .arc-shell{height:92px;margin-bottom:12px}
+  .arc-track{height:90px}
+  .arc-category{font-size:10px}
+  .grid{padding-top:9px}
+}
