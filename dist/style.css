@@ -9,3 +9,25 @@
 /* Compact, shallow circular category arc and larger quantity controls. */
 .arc-shell,.arc-track{height:116px}.arc-shell{--ring-radius:513px;margin-top:9px;margin-bottom:3px}.arc-backdrop{top:29px;box-shadow:inset 0 0 0 22px #f5f5f2,inset 0 0 0 44px #f9f9f6}.arc-category{top:10px;height:74px}
 .qty button{width:32px;height:32px;min-width:32px;font-size:20px;line-height:1;display:inline-flex;align-items:center;justify-content:center;position:relative}.qty button:before{content:'';position:absolute;inset:-5px;border-radius:50%}.qty:has(span) button{width:29px;height:29px;min-width:29px;font-size:18px}.qty:has(span){gap:4px;font-size:10px}.food .price-row{min-height:34px}.dish-label{font-size:6px;letter-spacing:.2px;padding:1px 7px}
+
+/* Premium SOF promotional carousel */
+.sof-banner{position:relative;margin:0 0 23px;border-radius:24px;overflow:hidden;background:#efe8df;box-shadow:0 13px 32px #29231c12}
+.sof-banner-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+.sof-banner-track::-webkit-scrollbar{display:none}
+.sof-banner-slide{position:relative;display:flex;align-items:center;min-width:100%;height:172px;padding:22px 15px 26px 23px;scroll-snap-align:start;overflow:hidden;isolation:isolate}
+.sof-banner-slide:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 82% 42%,#ffffff4d 0 25%,transparent 55%);z-index:-1}
+.sof-banner-copy{width:58%;position:relative;z-index:2}
+.sof-banner-copy small{display:block;margin-bottom:6px;font-size:8px;font-weight:800;letter-spacing:1.25px;text-transform:uppercase;opacity:.72}
+.sof-banner-copy h2{margin:0 0 6px;font-size:25px;line-height:1.02;letter-spacing:-1.15px}
+.sof-banner-copy p{margin:0 0 11px;font-size:9px;line-height:1.45;opacity:.76}
+.sof-banner-copy strong{display:inline-flex;align-items:center;min-height:27px;padding:0 12px;border-radius:99px;background:#20211f;color:#fff;font-size:9px;letter-spacing:.1px}
+.sof-banner-slide img{position:absolute;right:-18px;bottom:-12px;width:52%;height:155px;object-fit:contain;filter:drop-shadow(0 14px 10px #0003);z-index:1}
+.sof-banner-slide.tone-orange{background:linear-gradient(135deg,#ffd5bd,#ff956c);color:#271c17}
+.sof-banner-slide.tone-charcoal{background:linear-gradient(135deg,#30322f,#171816);color:#fff}
+.sof-banner-slide.tone-charcoal .sof-banner-copy strong{background:#ff7849}
+.sof-banner-slide.tone-cream{background:linear-gradient(135deg,#f4eadb,#e7cfaa);color:#33271c}
+.sof-banner-dots{position:absolute;z-index:4;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:5px;pointer-events:none}
+.sof-banner-dots button{width:5px;height:5px;padding:0;border-radius:50%;background:#ffffff91;box-shadow:0 0 0 1px #0000000d;pointer-events:auto;transition:width .2s,background .2s}
+.sof-banner-dots button.active{width:17px;border-radius:8px;background:#fff}
+@media (max-width:360px){.sof-banner-slide{height:158px;padding-left:19px}.sof-banner-copy h2{font-size:22px}.sof-banner-slide img{height:142px}}
+@media (prefers-reduced-motion:reduce){.sof-banner-track{scroll-behavior:auto}.sof-banner-dots button{transition:none}}
