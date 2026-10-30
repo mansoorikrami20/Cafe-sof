@@ -26,17 +26,17 @@
     const bell=icon('M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4'),bag=icon('M6 8h12l1 13H5L6 8Zm3 0V6a3 3 0 0 1 6 0v2'),search=icon('m20 20-4.5-4.5m2.5-5A7.5 7.5 0 1 1 3 10a7.5 7.5 0 0 1 15 0'),sliders=icon('M4 7h16M8 7a2 2 0 1 0 0 .01M4 17h16m-4 0a2 2 0 1 0 0 .01'),home=icon('m3 11 9-8 9 8v10H3V11Zm7 10v-7h4v7'),heart=icon('M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z'),receipt=icon('M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 5h6m-6 4h6'),user=icon('M20 21a8 8 0 0 0-16 0m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8');
     document.body.innerHTML=document.body.innerHTML.replaceAll('${bell}',bell).replaceAll('${bag}',bag).replaceAll('${search}',search).replaceAll('${sliders}',sliders).replaceAll('${home}',home).replaceAll('${heart}',heart).replaceAll('${receipt}',receipt).replaceAll('${user}',user);
     const dishes=[
-      {id:'plov',name:'Плов',cat:'Горячее',desc:'Рассыпчатый рис, нежное мясо и ароматные специи',weight:'450 г',price:450,img:'assets/plov-cutout.png'},
-      {id:'kazan',name:'Казан-кебаб',cat:'Горячее',desc:'Говядина, золотистый картофель и свежая зелень',weight:'400 г',price:550,img:'assets/kazan-cutout.png'},
-      {id:'shurpa',name:'Шурпа',cat:'Супы',desc:'Наваристый бульон, мясо и сезонные овощи',weight:'450 г',price:400,img:'assets/shurpa-cutout.png'},
-      {id:'roast',name:'Жаркое',cat:'Горячее',desc:'Томлёная говядина с картофелем и специями',weight:'450 г',price:500,img:'assets/roast-cutout.png'},
-      {id:'fatir',name:'Фатир-шурпа',cat:'Супы',desc:'Домашний суп с мясом и свежей лепёшкой',weight:'600 г',price:500,img:'assets/fatir-cutout.png'},
-      {id:'lamb',name:'Казан-кебаб из баранины',cat:'Горячее',desc:'Нежная баранина, картофель и восточные специи',weight:'400 г',price:600,img:'assets/kazan-cutout.png'}
+      {id:'plov',name:'Плов',cat:'Горячее',desc:'Рассыпчатый рис, нежное мясо и ароматные специи',weight:'450 г',price:450,img:'assets/plov-cutout.webp'},
+      {id:'kazan',name:'Казан-кебаб',cat:'Горячее',desc:'Говядина, золотистый картофель и свежая зелень',weight:'400 г',price:550,img:'assets/kazan-cutout.webp'},
+      {id:'shurpa',name:'Шурпа',cat:'Супы',desc:'Наваристый бульон, мясо и сезонные овощи',weight:'450 г',price:400,img:'assets/shurpa-cutout.webp'},
+      {id:'roast',name:'Жаркое',cat:'Горячее',desc:'Томлёная говядина с картофелем и специями',weight:'450 г',price:500,img:'assets/roast-cutout.webp'},
+      {id:'fatir',name:'Фатир-шурпа',cat:'Супы',desc:'Домашний суп с мясом и свежей лепёшкой',weight:'600 г',price:500,img:'assets/fatir-cutout.webp'},
+      {id:'lamb',name:'Казан-кебаб из баранины',cat:'Горячее',desc:'Нежная баранина, картофель и восточные специи',weight:'400 г',price:600,img:'assets/kazan-cutout.webp'}
     ];
     const banners=[
-      {eyebrow:'Вкусно вместе',title:'Семейный ужин',text:'Тёплые блюда для особенного вечера',cta:'Открыть плов',img:'assets/plov-cutout.png',type:'dish',target:'plov'},
-      {eyebrow:'С пылу с жару',title:'Горячее меню',text:'Мясо, специи и настоящее тепло',cta:'Смотреть горячее',img:'assets/kazan-cutout.png',type:'cat',target:'Горячее'},
-      {eyebrow:'Каждый день',title:'Домашние супы',text:'Насыщенный вкус и щедрая порция',cta:'Смотреть супы',img:'assets/shurpa-cutout.png',type:'cat',target:'Супы'}
+      {eyebrow:'Вкусно вместе',title:'Семейный ужин',text:'Тёплые блюда для особенного вечера',cta:'Открыть плов',img:'assets/plov-cutout.webp',type:'dish',target:'plov'},
+      {eyebrow:'С пылу с жару',title:'Горячее меню',text:'Мясо, специи и настоящее тепло',cta:'Смотреть горячее',img:'assets/kazan-cutout.webp',type:'cat',target:'Горячее'},
+      {eyebrow:'Каждый день',title:'Домашние супы',text:'Насыщенный вкус и щедрая порция',cta:'Смотреть супы',img:'assets/shurpa-cutout.webp',type:'cat',target:'Супы'}
     ];
     let category='Все',query='',slide=0,timer,cart={},favorites=new Set();
     const qs=s=>document.querySelector(s),money=n=>n.toLocaleString('ru-RU')+' ₽';
