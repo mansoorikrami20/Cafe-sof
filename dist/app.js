@@ -5,9 +5,9 @@ let dishes=[{id:'plov',name:'Плов',price:450,weight:'450 г',category:'Го�
 let products=[];
 const allItems=()=>[...dishes,...products];
 const defaultBanners=[
-{id:'family',eyebrow:'Вкусно вместе',title:'Семейный обед',text:'Любимые блюда для всей семьи',badge:'от 450 ₽',image:'plov',tone:'orange'},
-{id:'hot',eyebrow:'Горячее меню',title:'С пылу с жару',text:'Сытные блюда из мяса и картофеля',badge:'Попробуйте',image:'kazan',tone:'charcoal'},
-{id:'soup',eyebrow:'Каждый день',title:'Домашние супы',text:'Согревающий вкус и щедрые порции',badge:'от 400 ₽',image:'shurpa',tone:'cream'}
+{id:'family',eyebrow:'Вкусно вместе',title:'Семейный обед',text:'Любимые блюда для всей семьи',badge:'Открыть плов',image:'plov',tone:'orange',actionType:'product',actionValue:'plov'},
+{id:'hot',eyebrow:'Горячее меню',title:'С пылу с жару',text:'Сытные блюда из мяса и картофеля',badge:'Смотреть горячее',image:'kazan',tone:'charcoal',actionType:'category',actionValue:'Горячее'},
+{id:'soup',eyebrow:'Каждый день',title:'Домашние супы',text:'Согревающий вкус и щедрые порции',badge:'Смотреть супы',image:'shurpa',tone:'cream',actionType:'category',actionValue:'Супы'}
 ];
 let promoIndex=0,promoController=null;
 const state={page:'menu',category:'Все',mode:'Кафе',query:'',cart:{},favorites:[],branch:false,fulfillment:'Доставка'};
@@ -65,9 +65,15 @@ function getPromoBanners(){
   const configured=typeof cafeSettings!=='undefined'&&Array.isArray(cafeSettings?.banners)?cafeSettings.banners.filter(b=>b&&b.enabled!==false):[];
   return configured.length?configured:defaultBanners;
 }
+function promoAction(b,i){
+  const fallback=defaultBanners[i%defaultBanners.length];
+  const type=String(b.actionType||(b.productId?'product':b.category?'category':fallback.actionType));
+  const value=String(b.actionValue||b.productId||b.category||fallback.actionValue);
+  return {type:type==='product'?'product':'category',value};
+}
 function promoMarkup(){
   const banners=getPromoBanners();
-  return `<section class="sof-banner" aria-label="Акции и предложения"><div class="sof-banner-track" id="promoTrack">${banners.map((b,i)=>`<article class="sof-banner-slide tone-${safe(String(b.tone||defaultBanners[i%defaultBanners.length].tone))}" data-promo-slide="${i}"><div class="sof-banner-copy"><small>${safe(String(b.eyebrow||'Специальное предложение'))}</small><h2>${safe(String(b.title||'Любимые блюда'))}</h2><p>${safe(String(b.text||b.subtitle||'Закажите в «Соф»'))}</p><strong>${safe(String(b.badge||'Попробуйте'))}</strong></div><img src="${safe(String(b.imageUrl||foodImage({image:b.image||defaultBanners[i%defaultBanners.length].image})))}" alt="" loading="${i?'lazy':'eager'}"></article>`).join('')}</div><div class="sof-banner-dots" role="tablist" aria-label="Выбор баннера">${banners.map((_,i)=>`<button type="button" data-promo-index="${i}" class="${i===promoIndex?'active':''}" aria-label="Баннер ${i+1}" aria-selected="${i===promoIndex}"></button>`).join('')}</div></section>`;
+  return `<section class="sof-banner" aria-label="Акции и предложения"><div class="sof-banner-track" id="promoTrack">${banners.map((b,i)=>{const action=promoAction(b,i);return `<article class="sof-banner-slide tone-${safe(String(b.tone||defaultBanners[i%defaultBanners.length].tone))}" data-promo-slide="${i}"><div class="sof-banner-copy"><small>${safe(String(b.eyebrow||'Специальное предложение'))}</small><h2>${safe(String(b.title||'Любимые блюда'))}</h2><p>${safe(String(b.text||b.subtitle||'Закажите в «Соф»'))}</p><button type="button" class="sof-banner-cta" data-promo-action="${safe(action.type)}" data-promo-target="${safe(action.value)}" aria-label="Открыть: ${safe(String(b.title||'предложение'))}"><span>${safe(String(b.badge||'Смотреть блюда'))}</span><b aria-hidden="true">→</b></button></div><img src="${safe(String(b.imageUrl||foodImage({image:b.image||defaultBanners[i%defaultBanners.length].image})))}" alt="" loading="${i?'lazy':'eager'}"></article>`}).join('')}</div><div class="sof-banner-dots" role="tablist" aria-label="Выбор баннера">${banners.map((_,i)=>`<button type="button" data-promo-index="${i}" class="${i===promoIndex?'active':''}" aria-label="Баннер ${i+1}" aria-selected="${i===promoIndex}"></button>`).join('')}</div></section>`;
 }
 function attachPromo(){
   promoController?.destroy();promoController=null;
@@ -75,10 +81,16 @@ function attachPromo(){
   const slides=[...track.querySelectorAll('[data-promo-slide]')],dots=[...document.querySelectorAll('[data-promo-index]')];
   if(!slides.length)return;promoIndex=Math.min(promoIndex,slides.length-1);
   let timer=0,scrollFrame=0,paused=false;
-  const select=index=>{promoIndex=wrapIndex(index,slides.length);dots.forEach((dot,i)=>{const active=i===promoIndex;dot.classList.toggle('active',active);dot.setAttribute('aria-selected',String(active))})};
+  const select=index=>{promoIndex=wrapIndex(index,slides.length);slides.forEach((slide,i)=>slide.classList.toggle('is-active',i===promoIndex));dots.forEach((dot,i)=>{const active=i===promoIndex;dot.classList.toggle('active',active);dot.setAttribute('aria-selected',String(active))})};
   const go=(index,behavior='smooth')=>{select(index);track.scrollTo({left:slides[promoIndex].offsetLeft,behavior})};
   const start=()=>{clearInterval(timer);if(slides.length>1&&!paused&&!matchMedia('(prefers-reduced-motion: reduce)').matches)timer=setInterval(()=>go(promoIndex+1),4800)};
   dots.forEach((dot,i)=>dot.addEventListener('click',()=>{go(i);start()}));
+  track.querySelectorAll('[data-promo-action]').forEach(button=>button.addEventListener('click',event=>{
+    event.stopPropagation();clearInterval(timer);
+    const type=button.dataset.promoAction,target=button.dataset.promoTarget;
+    if(type==='product'){const product=allItems().find(item=>item.id===target);if(product)showProduct(product.id);else toast('Блюдо пока недоступно')}
+    else{state.mode='Кафе';state.category=target||'Все';state.query='';navigate('menu');requestAnimationFrame(()=>document.querySelector('.arc-shell')?.scrollIntoView({behavior:'smooth',block:'center'}))}
+  }));
   track.addEventListener('scroll',()=>{cancelAnimationFrame(scrollFrame);scrollFrame=requestAnimationFrame(()=>{const index=Math.round(track.scrollLeft/Math.max(1,track.clientWidth));select(index)})},{passive:true});
   track.addEventListener('pointerdown',()=>{paused=true;clearInterval(timer)});
   track.addEventListener('pointerup',()=>{paused=false;start()});
