@@ -88,3 +88,25 @@
 .arc-shell::before{left:0;background:linear-gradient(90deg,var(--bg) 4%,rgba(248,248,247,.72) 40%,rgba(248,248,247,0) 100%)}
 .arc-shell::after{right:0;background:linear-gradient(270deg,var(--bg) 4%,rgba(248,248,247,.72) 40%,rgba(248,248,247,0) 100%)}
 @media(max-width:360px){.arc-shell{width:calc(100% + 52px);margin-left:-26px;margin-right:-26px}.arc-shell::before,.arc-shell::after{width:34px}.arc-track{gap:7px}}
+
+
+/* Premium animated banner transitions and CTA */
+.sof-banner-track{scroll-behavior:smooth;scroll-snap-stop:always}
+.sof-banner-slide{opacity:.72;transform:scale(.985);filter:saturate(.86);transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1),filter .65s cubic-bezier(.22,1,.36,1)}
+.sof-banner-slide.is-active{opacity:1;transform:scale(1);filter:saturate(1)}
+.sof-banner-copy small,.sof-banner-copy h2,.sof-banner-copy p,.sof-banner-cta{opacity:0;transform:translateY(12px);transition:opacity .55s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
+.sof-banner-slide.is-active .sof-banner-copy small{opacity:.72;transform:none;transition-delay:.06s}
+.sof-banner-slide.is-active .sof-banner-copy h2{opacity:1;transform:none;transition-delay:.1s}
+.sof-banner-slide.is-active .sof-banner-copy p{opacity:.76;transform:none;transition-delay:.14s}
+.sof-banner-slide.is-active .sof-banner-cta{opacity:1;transform:none;transition-delay:.18s}
+.sof-banner-slide img{opacity:.5;transform:translateX(20px) scale(.93) rotate(1.5deg);transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1)}
+.sof-banner-slide.is-active img{opacity:1;transform:translateX(0) scale(1) rotate(0)}
+.sof-banner-slide:after{content:'';position:absolute;inset:-40% auto -40% -45%;width:32%;z-index:3;pointer-events:none;background:linear-gradient(90deg,transparent,#fff7,transparent);transform:skewX(-18deg) translateX(-220%);opacity:0}
+.sof-banner-slide.is-active:after{animation:sofBannerSheen .9s .18s cubic-bezier(.22,1,.36,1) both}
+@keyframes sofBannerSheen{0%{transform:skewX(-18deg) translateX(-220%);opacity:0}25%{opacity:.5}100%{transform:skewX(-18deg) translateX(520%);opacity:0}}
+.sof-banner-cta{appearance:none;border:0;min-height:29px;padding:0 11px 0 13px;border-radius:99px;background:#20211f;color:#fff;display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:9px;font-weight:800;letter-spacing:.1px;cursor:pointer;box-shadow:0 7px 16px #1112}
+.sof-banner-cta b{display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#ffffff21;font-size:12px;line-height:1;transition:transform .3s cubic-bezier(.22,1,.36,1),background .3s}
+.sof-banner-cta:hover b,.sof-banner-cta:focus-visible b{transform:translateX(3px);background:#ffffff35}
+.sof-banner-slide.is-active .sof-banner-cta:active{transform:scale(.96);transition-delay:0s}
+.tone-charcoal .sof-banner-cta{background:#ff7849;color:#181715}
+@media(prefers-reduced-motion:reduce){.sof-banner-track{scroll-behavior:auto}.sof-banner-slide,.sof-banner-copy small,.sof-banner-copy h2,.sof-banner-copy p,.sof-banner-cta,.sof-banner-slide img{transition:none!important}.sof-banner-slide:after{animation:none!important}}
