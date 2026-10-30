@@ -65,3 +65,16 @@
 .table-order-panel{text-align:left}.table-number .input-shell{min-height:64px;border-color:#ffbea6;background:#fff8f5}.table-number .input-shell svg{width:24px;height:24px;color:var(--orange)}.table-number input{font-size:18px!important;font-weight:750;letter-spacing:.2px}.table-hint{display:flex;align-items:center;gap:8px;background:#eef7f1;color:#43705a;border-radius:13px;padding:11px 12px;font-size:8px;line-height:1.45}.table-hint svg{width:15px;height:15px;flex:0 0 auto}
 .checkout-total h2{font-size:14px!important}.checkout-submit{min-height:50px;background:linear-gradient(135deg,#262724,#171815);box-shadow:0 8px 20px #1f201d24;font-size:11px}.secure-note{display:flex;justify-content:center;align-items:center;gap:6px;color:#999a95;font-size:8px;margin:11px 0 0}.secure-note svg{width:13px;height:13px;color:#4c815f}.checkout-total .summary-row{font-size:10px}.checkout-total .summary-row.total{font-size:14px}
 @media(max-width:360px){#checkoutForm>.panel{padding:17px}.fulfillment-card{padding:11px}.fulfillment-icon{width:38px;height:38px}.fulfillment-copy small{font-size:7.5px}.payment-card{grid-template-columns:30px 1fr;padding:9px}.payment-card>span{width:30px;height:30px}}
+
+
+/* Compact horizontal fulfillment selector */
+.fulfillment-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.fulfillment-card{min-width:0;min-height:90px;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:12px 5px 10px;text-align:center}
+.fulfillment-icon{width:40px;height:40px;border-radius:13px}
+.fulfillment-icon svg{width:21px;height:21px}
+.fulfillment-copy{display:block;min-width:0;width:100%}
+.fulfillment-copy strong{display:block;font-size:9px;line-height:1.2;white-space:nowrap;letter-spacing:-.15px}
+.fulfillment-copy small{display:none}
+.choice-check{position:absolute;top:6px;right:6px;width:17px;height:17px}
+.choice-check svg{width:10px;height:10px}
+@media(max-width:360px){.fulfillment-grid{gap:5px}.fulfillment-card{min-height:84px;padding:10px 3px 8px}.fulfillment-icon{width:36px;height:36px}.fulfillment-copy strong{font-size:8px}.choice-check{top:5px;right:5px}}
