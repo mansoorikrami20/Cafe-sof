@@ -110,3 +110,11 @@
 .sof-banner-slide.is-active .sof-banner-cta:active{transform:scale(.96);transition-delay:0s}
 .tone-charcoal .sof-banner-cta{background:#ff7849;color:#181715}
 @media(prefers-reduced-motion:reduce){.sof-banner-track{scroll-behavior:auto}.sof-banner-slide,.sof-banner-copy small,.sof-banner-copy h2,.sof-banner-copy p,.sof-banner-cta,.sof-banner-slide img{transition:none!important}.sof-banner-slide:after{animation:none!important}}
+
+
+/* Shared cart and favorites accessibility fixes */
+.app:has(.cart-floating) .bottom-nav{display:flex}
+.app:has(.cart-floating){padding-bottom:176px}
+.cart-floating{bottom:91px}
+.food>.heart{width:36px;height:36px;min-height:36px}
+@media(max-width:440px){.bottom-nav{bottom:max(12px,env(safe-area-inset-bottom))}.cart-floating{bottom:88px}}
