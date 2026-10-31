@@ -90,7 +90,7 @@ test('full catalog persists across handler restarts; two sessions cannot overwri
 });
 test('Blob adapter keeps private storage, conditional writes and conflict reporting',async()=>{
   const calls=[];const doc=configuredMenu();const storage=createStorage({get:async(key,options)=>{calls.push({key,options});return {statusCode:200,stream:new Blob([JSON.stringify(doc)]).stream(),blob:{etag:'test-etag'}};},put:async(...args)=>calls.push(args)});
-  const read=await storage.readStore();assert.equal(read.etag,'test-etag');assert.deepEqual(read.doc,doc);assert.deepEqual(calls[0].options,{access:'private',useCache:false});
+  const read=await storage.readStore();assert.equal(read.etag,'test-etag');assert.deepEqual(read.doc,doc);assert.deepEqual(calls[0].options,{access:'private',useCache:false,headers:{'Accept-Encoding':'identity'}});
   await storage.writeStore(doc,read.etag);const options=calls[1][2];assert.equal(options.ifMatch,'test-etag');assert.equal(options.access,'private');assert.equal(options.allowOverwrite,true);
   await storage.writeStore(doc,null);assert.equal(calls[2][2].allowOverwrite,false);assert(!('ifMatch' in calls[2][2]));
   class BlobPreconditionFailedError extends Error{};

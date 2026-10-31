@@ -1,4 +1,5 @@
 import {createCipheriv,createDecipheriv,randomBytes} from 'node:crypto';
+import {readPrivateJSON} from './blob-json.js';
 const objectKey='sof-private/integrations-v1.json';
 export function vaultKey(value){
   if(typeof value!=='string'||!(/^[A-Za-z0-9+/]{43}=$/).test(value))throw new Error('Vault key unavailable');
@@ -17,10 +18,9 @@ export function openCredentials(sealed,branchId,key){
 }
 export function createVaultStorage({get,put}){return {
   async readVault(){
-    const result=await get(objectKey,{access:'private',useCache:false});if(!result)return {vault:{version:1,revision:0,branches:{}},etag:null};
-    if(result.statusCode!==200)throw new Error('Vault unavailable');
-    const vault=JSON.parse(await new Response(result.stream).text());if(vault.version!==1||!Number.isSafeInteger(vault.revision)||!vault.branches||typeof vault.branches!=='object'||Array.isArray(vault.branches))throw new Error('Invalid vault');
-    return {vault,etag:result.blob.etag};
+    const result=await readPrivateJSON(get,objectKey);if(!result)return {vault:{version:1,revision:0,branches:{}},etag:null};
+    const vault=result.value;if(vault.version!==1||!Number.isSafeInteger(vault.revision)||!vault.branches||typeof vault.branches!=='object'||Array.isArray(vault.branches))throw new Error('Invalid vault');
+    return {vault,etag:result.etag};
   },
   async writeVault(vault,etag){
     try{await put(objectKey,JSON.stringify(vault),{access:'private',addRandomSuffix:false,contentType:'application/json',allowOverwrite:!!etag,...(etag?{ifMatch:etag}:{})});}

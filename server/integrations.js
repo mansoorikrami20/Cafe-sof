@@ -20,7 +20,7 @@ export function createIntegrationsHandler({readStore,connected,readVault,writeVa
     if(!connected())fail(503,'Хранилище не подключено.');
     const {doc}=await readStore();
     const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('sof_admin='));
-    if(!verifySession(cookie?.slice(10)||'',doc.admin,env.SOF_SESSION_SECRET,now()))fail(401,'Войдите в кабинет владельца.');
+    if(!verifySession(cookie?.slice(10)||'',doc.admin,env.SOF_SESSION_SECRET,now(),env.SOF_REQUIRE_VERIFIED_EMAIL==='1'))fail(401,'Войдите в кабинет владельца.');
     let key;try{key=vaultKey(env.SOF_INTEGRATION_SECRET);}catch{fail(503,'Хранилище ключей ещё не настроено на сервере.');}
     const branches=Array.isArray(doc.branches)?doc.branches:[];
     const {vault,etag}=await readVault();

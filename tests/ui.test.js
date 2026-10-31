@@ -30,7 +30,7 @@ test('storefront reads shared catalog, renders edited names as text and disables
 test('admin loads catalog, filters dishes, opens a prefilled editor and escapes names',async()=>{
   const menu=structuredClone(initialMenu);menu.dishes[0].name='<script>unsafe</script>';
   const calls=[];const fetch=async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>url.endsWith('session')?{authenticated:true,email:'owner@example.com'}:structuredClone(menu)};};
-  const h=contextFor(fs.readFileSync('dist/admin/index.html','utf8'),fetch);h.run(fs.readFileSync('dist/admin/catalog-editor.js','utf8'));h.run(fs.readFileSync('dist/admin/admin.js','utf8'));await tick();
+  const h=contextFor(fs.readFileSync('dist/admin/index.html','utf8'),fetch);h.run(fs.readFileSync('dist/admin/catalog-editor.js','utf8'));h.run(fs.readFileSync('dist/admin/account-ui.js','utf8'));h.run(fs.readFileSync('dist/admin/admin.js','utf8'));await tick();
   assert.equal(h.document.querySelectorAll('#dishRows tr').length,45);assert.equal(h.document.querySelectorAll('#dishRows script').length,0);assert(h.document.querySelector('#dishRows').textContent.includes('<script>unsafe</script>'));
   const search=h.document.querySelector('#dishSearch');search.value='Шурпа';search.dispatchEvent(new h.window.Event('input',{bubbles:true}));assert.equal(h.document.querySelectorAll('#dishRows tr').length,2);
   h.run("editDish('kazan')");assert(h.document.querySelector('#editor').open);assert.equal(h.document.querySelector('#dishForm [name=price]').value,'550');
@@ -39,13 +39,13 @@ test('admin loads catalog, filters dishes, opens a prefilled editor and escapes 
 });
 test('unconfigured admin never enables publishing in preview mode',async()=>{
   const fetch=async url=>url.includes('manage')?{ok:false,status:503,json:async()=>({error:'Хранилище не подключено.'})}:{ok:true,json:async()=>({...structuredClone(initialMenu),connected:false})};
-  const h=contextFor(fs.readFileSync('dist/admin/index.html','utf8'),fetch);h.run(fs.readFileSync('dist/admin/catalog-editor.js','utf8'));h.run(fs.readFileSync('dist/admin/admin.js','utf8'));await tick();assert(h.document.querySelector('#previewAdmin'));
+  const h=contextFor(fs.readFileSync('dist/admin/index.html','utf8'),fetch);h.run(fs.readFileSync('dist/admin/catalog-editor.js','utf8'));h.run(fs.readFileSync('dist/admin/account-ui.js','utf8'));h.run(fs.readFileSync('dist/admin/admin.js','utf8'));await tick();assert(h.document.querySelector('#previewAdmin'));
   h.document.querySelector('#previewAdmin').dispatchEvent(new h.window.Event('click',{bubbles:true}));await tick();h.run('setDirty()');assert(h.document.querySelector('#saveMenu').disabled);assert.match(h.document.querySelector('.banner').textContent,/не попадут в меню/);
 });
 
 async function ownerHarness(menu,fetch){
   const h=contextFor(fs.readFileSync('dist/admin/index.html','utf8'),fetch||(async url=>({ok:true,json:async()=>url.endsWith('session')?{authenticated:true,email:'test@example.test'}:structuredClone(menu)})));
-  h.run(fs.readFileSync('dist/admin/catalog-editor.js','utf8'));h.run(fs.readFileSync('dist/admin/admin.js','utf8'));await tick();return h;
+  h.run(fs.readFileSync('dist/admin/catalog-editor.js','utf8'));h.run(fs.readFileSync('dist/admin/account-ui.js','utf8'));h.run(fs.readFileSync('dist/admin/admin.js','utf8'));await tick();return h;
 }
 test('admin navigation opens QR from the published catalog without discarding an unsaved edit',async()=>{
   const h=await ownerHarness(initialMenu,async url=>({ok:true,json:async()=>url.endsWith('session')?{authenticated:true,email:'test@example.test'}:url==='/api/catalog'?{schemaVersion:2,connected:true,dishes:[],products:[],branches:[]}:structuredClone(initialMenu)}));

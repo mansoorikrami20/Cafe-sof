@@ -1,7 +1,9 @@
 import {createHmac,randomUUID} from 'node:crypto';
 import {cleanMenu,equal,fail,hash,passwordRecord,signSession,verifyPassword,verifySession} from './core.js';
 import {initialMenu} from './seed.js';
-export function createHandler({readStore,writeStore,connected,env=process.env,now=Date.now}){
+import {createAccountEmail,mailConfig,requiresEmail} from './account-email.js';
+export function createHandler({readStore,writeStore,connected,env=process.env,now=Date.now,sendMail}){
+  const accountAction=createAccountEmail({readStore,writeStore,env,now,sendMail});
   return async function handler(req,res){
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     const send=(status,data)=>res.status(status).json(data);
@@ -16,8 +18,8 @@ export function createHandler({readStore,writeStore,connected,env=process.env,no
       let {doc,etag}=await readStore();
       const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('sof_admin='));
       const token=cookie?cookie.slice(10):'';
-      const authenticated=verifySession(token,doc.admin,env.SOF_SESSION_SECRET,now());
-      if(action==='session'&&req.method==='GET')return send(200,{configured:true,needsSetup:!doc.admin,authenticated,...(authenticated?{email:doc.admin.email}:{})});
+      const authenticated=verifySession(token,doc.admin,env.SOF_SESSION_SECRET,now(),requiresEmail(env));
+      if(action==='session'&&req.method==='GET')return send(200,{configured:true,needsSetup:!doc.admin,authenticated,emailDeliveryConfigured:!!mailConfig(env),emailVerificationRequired:requiresEmail(env),...(authenticated?{email:doc.admin.email,emailVerified:!!doc.admin.emailVerifiedAt}:{})});
       if(action==='menu'&&req.method==='GET'){
         if(!authenticated)fail(401,'Войдите в кабинет.');
         const menu=cleanMenu(doc);return send(200,{...menu,revision:doc.revision,updatedAt:doc.updatedAt,history:(doc.history||[]).map(h=>({...cleanMenu(h),revision:h.revision,updatedAt:h.updatedAt}))});
@@ -29,11 +31,19 @@ export function createHandler({readStore,writeStore,connected,env=process.env,no
       if(req.method!=='POST')fail(405,'Требуется POST-запрос.');
       const body=req.body;
       if(!body||typeof body!=='object'||Array.isArray(body)||JSON.stringify(body).length>3000000)fail(400,'Некорректный запрос.');
+      if(['request-reset','request-verification','reset-password','verify-email'].includes(action)){
+        if(JSON.stringify(body).length>4096)fail(400,'Слишком большой запрос.');
+        const result=await accountAction(action,body,req);
+        if(['reset-password','verify-email'].includes(action))res.setHeader('Set-Cookie','sof_admin=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0');
+        return send(200,result);
+      }
       if(action==='setup'){
         if(doc.admin)fail(409,'Владелец уже зарегистрирован. Войдите по email и паролю.');
         if(typeof body.setupKey!=='string'||body.setupKey.length>128||!equal(hash(body.setupKey),env.SOF_SETUP_HASH))fail(403,'Нужна личная ссылка настройки владельца.');
+        if(requiresEmail(env)&&!mailConfig(env))fail(503,'Сначала подключите отправку писем для подтверждения почты.');
         const admin=await passwordRecord(body.email,body.password);
         doc={...doc,admin,updatedAt:new Date(now()).toISOString()};await writeStore(doc,etag);
+        if(requiresEmail(env))return send(200,{ok:true,verificationRequired:true});
         res.setHeader('Set-Cookie',`sof_admin=${signSession(admin,env.SOF_SESSION_SECRET,now())}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`);
         return send(200,{ok:true});
       }
@@ -53,6 +63,7 @@ export function createHandler({readStore,writeStore,connected,env=process.env,no
         }
         if(!recorded)fail(429,'Попробуйте ещё раз через минуту.');
         if(!await verifyPassword(doc.admin,body.email,body.password))fail(401,'Неверный email или пароль.');
+        if(requiresEmail(env)&&!doc.admin.emailVerifiedAt)return send(403,{error:'Подтвердите почту перед входом в кабинет.',verificationRequired:true});
         res.setHeader('Set-Cookie',`sof_admin=${signSession(doc.admin,env.SOF_SESSION_SECRET,now())}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`);
         return send(200,{ok:true});
       }
