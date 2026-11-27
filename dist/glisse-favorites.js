@@ -7,11 +7,11 @@ const favoriteGlassStyle = {
   width: "100%",
   height: "100%",
   borderRadius: 75,
-  background: "none",
+  background: "rgba(255, 255, 255, 0.58)",
   "--lg-glass-bend": 1,
   "--lg-glass-dispersion": 1.05,
-  "--lg-blur": "0px",
-  "--lg-rim-shine": 0.59,
+  "--lg-blur": "8px",
+  "--lg-rim-shine": 0.72,
 };
 
 function mountFavoriteGlass(button) {
