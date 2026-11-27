@@ -257,3 +257,50 @@
   .cart-item{padding:11px}
   .cart-item img{width:73px;height:65px}
 }
+
+/* Sof address map prototype */
+.location{max-width:250px}
+.location>span{min-width:0}
+.location strong{display:block;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.location strong span{color:var(--orange);font-size:10px}
+.address-dialog{padding:22px;border-radius:28px;background:#fffdfb;overflow:hidden}
+.address-dialog .sheet-head{margin-bottom:18px}
+.address-dialog .sheet-head h2{font-size:23px;font-weight:800;letter-spacing:-.8px}
+.address-kicker{display:block;color:var(--orange);font-size:8px;font-weight:800;letter-spacing:1.6px;margin-bottom:4px}
+.address-search{height:48px;display:flex;align-items:center;gap:10px;padding:0 14px;border:1px solid #eee4dc;border-radius:16px;background:#fff;color:#8f908b;box-shadow:0 7px 20px rgba(74,44,28,.055)}
+.address-search svg{width:18px;height:18px;flex:0 0 auto}
+.address-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:12px}
+.address-search input::placeholder{color:#a8a8a3}
+.address-map{position:relative;width:100%;height:310px;margin-top:12px;padding:0;overflow:hidden;border:1px solid #e8ded5;border-radius:21px;background:#eee9df;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45);cursor:crosshair}
+.address-map:focus-visible{outline:3px solid #ffad8e;outline-offset:3px}
+.address-map:before{content:'';position:absolute;inset:0;background-image:linear-gradient(32deg,transparent 47%,rgba(255,255,255,.42) 48% 52%,transparent 53%),linear-gradient(122deg,transparent 48%,rgba(220,211,199,.45) 49% 51%,transparent 52%);background-size:70px 70px,95px 95px;opacity:.7}
+.map-park{position:absolute;left:-7%;top:8%;width:43%;height:36%;border-radius:48% 52% 43% 57%;background:#dce8d2;transform:rotate(-8deg)}
+.map-water{position:absolute;right:-17%;bottom:-10%;width:52%;height:35%;border-radius:50%;background:#d8e8e7;transform:rotate(-12deg)}
+.map-road{position:absolute;display:block;background:#fff;border:1px solid #e2dcd3;box-shadow:0 0 0 4px rgba(255,255,255,.34)}
+.road-one{left:-10%;top:48%;width:125%;height:17px;transform:rotate(-8deg)}
+.road-two{left:45%;top:-12%;width:16px;height:130%;transform:rotate(18deg)}
+.road-three{left:-12%;top:73%;width:92%;height:12px;transform:rotate(20deg)}
+.road-four{left:12%;top:-7%;width:12px;height:105%;transform:rotate(-21deg)}
+.map-building{position:absolute;border-radius:5px;background:#d5cabd;border:2px solid #eee7df;box-shadow:0 2px 4px rgba(63,48,35,.08)}
+.building-one{left:20%;top:50%;width:48px;height:28px;transform:rotate(-8deg)}
+.building-two{right:13%;top:22%;width:62px;height:34px;transform:rotate(12deg)}
+.building-three{left:16%;bottom:13%;width:72px;height:29px;transform:rotate(18deg)}
+.building-four{right:16%;bottom:18%;width:44px;height:42px;transform:rotate(-8deg)}
+.map-label{position:absolute;color:#7e7c75;font:600 8px/1.2 Manrope,sans-serif;white-space:nowrap;text-shadow:0 1px #fff}
+.label-one{left:29%;top:43%;transform:rotate(-8deg)}
+.label-two{right:5%;top:64%;transform:rotate(18deg)}
+.label-three{left:5%;top:19%;color:#66815d}
+.map-pin{position:absolute;z-index:5;display:grid;place-items:center;transform:translate(-50%,-82%);transition:left .25s cubic-bezier(.22,1,.36,1),top .25s cubic-bezier(.22,1,.36,1)}
+.map-pin b{width:42px;height:42px;display:grid;place-items:center;border:4px solid #fff;border-radius:50% 50% 50% 14px;background:var(--orange);color:#fff;box-shadow:0 10px 22px rgba(118,54,31,.28);transform:rotate(-45deg)}
+.map-pin svg{width:20px;height:20px;transform:rotate(45deg);stroke-width:2}
+.map-pin em{width:16px;height:6px;margin-top:5px;border-radius:50%;background:rgba(60,40,27,.16);filter:blur(2px)}
+.map-pin.placed b{animation:sofPinDrop .42s cubic-bezier(.2,.9,.3,1.35)}
+@keyframes sofPinDrop{0%{transform:translateY(-18px) rotate(-45deg);opacity:.25}100%{transform:translateY(0) rotate(-45deg);opacity:1}}
+.address-map-note{display:flex;align-items:center;gap:9px;padding:11px 3px 4px;color:#7f807a}
+.address-map-note p{margin:0;font-size:9px;line-height:1.45}
+.address-pulse{width:9px;height:9px;flex:0 0 auto;border-radius:50%;background:var(--orange);box-shadow:0 0 0 5px rgba(255,120,73,.13)}
+.address-confirm{min-height:50px;margin-top:12px;background:#20211f;box-shadow:0 10px 24px rgba(32,33,31,.17);font-weight:800}
+.address-confirm:active{transform:scale(.98)}
+.address-prototype-note{text-align:center;margin:10px 0 0;color:#a0a19c;font-size:8px}
+@media(max-width:360px){.address-dialog{padding:18px}.address-map{height:270px}.location{max-width:210px}.location strong{max-width:150px}}
+@media(prefers-reduced-motion:reduce){.map-pin{transition:none}.map-pin.placed b{animation:none}}
