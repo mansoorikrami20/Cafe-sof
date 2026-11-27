@@ -300,3 +300,38 @@
 .address-prototype-note{text-align:center;margin:10px 0 0;color:#a0a19c;font-size:8px}
 @media(max-width:360px){.address-dialog{padding:18px}.address-map{height:270px}.location{max-width:210px}.location strong{max-width:150px}}
 @media(prefers-reduced-motion:reduce){.map-pin{transition:none}.map-pin.placed b{animation:none}}
+
+/* Optional restaurant add-ons: translation and payment methods */
+.search .translate-menu-button{
+  flex:0 0 43px;
+  width:43px;
+  height:43px;
+  border:1px solid #f0dfd5;
+  background:#fff7f2;
+  color:var(--orange);
+}
+.search .translate-menu-button svg{width:19px;height:19px;stroke-width:1.8}
+.search .translate-menu-button:active{transform:scale(.94)}
+.translation-kicker{display:block;color:var(--orange);font-size:8px;font-weight:800;letter-spacing:1.3px;margin-bottom:4px}
+.translation-note{margin:12px 0 16px;color:#92938d;font-size:10px;line-height:1.6}
+.language-list{display:flex;flex-direction:column;gap:8px}
+.language-option{min-height:58px;width:100%;display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid #eee7e1;border-radius:16px;background:#fffaf6;text-align:left}
+.language-option>b{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#f0efeb;color:#6f716b;font-size:9px}
+.language-option>span{display:flex;flex-direction:column;gap:3px}
+.language-option strong{font-size:12px}
+.language-option small{color:#9a9b96;font-size:8px}
+.language-option>i{margin-left:auto;color:#969791}
+.language-option.active{border-color:#ffc7b2;background:#fff5ef}
+.language-option.active>b{background:var(--orange);color:#fff}
+.language-option.active>i{color:var(--orange)}
+.language-option.active svg{width:17px;height:17px}
+.payment-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.payment-card{min-width:0}
+.payment-card strong{white-space:nowrap}
+@media(max-width:360px){
+  .search{gap:6px}
+  .search .circle,.search .translate-menu-button{width:40px;height:40px;flex-basis:40px}
+  .payment-grid{gap:6px}
+  .payment-card{padding-left:5px;padding-right:5px}
+  .payment-card strong{font-size:8px}
+}
