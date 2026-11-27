@@ -9,14 +9,22 @@ function updateCatalogCategories(){
   else arcCategories=[all,...items];
   if(!arcCategories.some(c=>c.name===state.category))state.category='Все';
 }
+let deliveryAddress=localStorage.getItem('sof-delivery-address')||'';
+function shortDeliveryAddress(value){
+  const cleaned=String(value||'').trim().replace(/^г\.?\s*[^,]+,\s*/i,'');
+  return cleaned.length>34?cleaned.slice(0,33).trim()+'…':cleaned;
+}
+function updateAddressHeader(){
+  const label=document.querySelector('#branchLabel');if(!label)return;
+  label.innerHTML=safe(deliveryAddress?shortDeliveryAddress(deliveryAddress):'Укажите адрес доставки')+' <span>⌄</span>';
+  label.title=deliveryAddress||'';
+}
 function applyCafeSettings(){
+  updateAddressHeader();
   if(!cafeSettings)return;
   const s=cafeSettings;
   document.title=s.name+' — любимая еда рядом';
   const headline=document.querySelector('.intro span');if(headline)headline.textContent=s.tagline||'Закажите в «'+s.name+'».';
-  const branch=catalogBranches.find(b=>b.id===state.branch);
-  const label=document.querySelector('#branchLabel');
-  if(label){label.textContent=branch?.name||(state.branch?'Филиал недоступен':'Выберите филиал');label.title=branch?.address||'';}
   if(state.page==='menu'){
     const info=document.createElement('p');info.id='cafeContact';info.className='cafe-contact';
     info.textContent=[s.name,s.address,s.hours,s.phone,s.deliveryNote].filter(Boolean).join(' · ');
@@ -26,8 +34,20 @@ function applyCafeSettings(){
 }
 function openBranchSelector(){
   const box=document.querySelector('#branchOptions');
-  box.innerHTML=`<p class="muted">${catalogBranches.length?'Выберите филиал, чтобы увидеть его ассортимент и цены.':'Филиалы ещё не настроены. Реальные заказы пока недоступны.'}</p>${catalogBranches.map(b=>`<button class="branch-option" data-select-branch="${safe(b.id)}"><span><strong>${safe(b.name)}</strong><small>${safe(b.address)} · ${safe(b.opensAt)}–${safe(b.closesAt)}</small></span><span>→</span></button>`).join('')}<button class="branch-option" data-select-branch=""><span><strong>Общее меню</strong><small>Без выбора филиала · заказы не отправляются</small></span><span>→</span></button>`;
+  const value=safe(deliveryAddress);
+  box.innerHTML=`<label class="address-search">${svg('search')}<input id="addressSearch" type="search" autocomplete="street-address" placeholder="Введите улицу и дом" value="${value}" aria-label="Адрес доставки"></label>
+  <button type="button" class="address-map" id="addressMap" aria-label="Поставить точку на карте">
+    <span class="map-park"></span><span class="map-water"></span>
+    <i class="map-road road-one"></i><i class="map-road road-two"></i><i class="map-road road-three"></i><i class="map-road road-four"></i>
+    <span class="map-building building-one"></span><span class="map-building building-two"></span><span class="map-building building-three"></span><span class="map-building building-four"></span>
+    <span class="map-label label-one">ул. Ленина</span><span class="map-label label-two">Садовая ул.</span><span class="map-label label-three">Центральный парк</span>
+    <span class="map-pin" id="addressPin" style="left:62%;top:46%"><b>${svg('pin')}</b><em></em></span>
+  </button>
+  <div class="address-map-note"><span class="address-pulse"></span><p id="addressMapStatus">${deliveryAddress?'Адрес сохранён. Можно выбрать другую точку.':'Нажмите на карту, чтобы поставить точку вручную'}</p></div>
+  <button type="button" class="primary address-confirm" data-confirm-address>Подтвердить адрес</button>
+  <p class="address-prototype-note">Демонстрационная карта · геокодирование не подключено</p>`;
   document.querySelector('#branchDialog').showModal();
+  requestAnimationFrame(()=>document.querySelector('#addressSearch')?.focus({preventScroll:true}));
 }
 const renderBeforeCatalog=render;
 render=function(){renderBeforeCatalog();applyCafeSettings();};
@@ -59,14 +79,27 @@ async function refreshCatalog(force=false){
     toast(error.message||'Не удалось обновить каталог.');return false;
   }
 }
-document.addEventListener('click',async event=>{
-  const button=event.target.closest('[data-select-branch]');if(!button)return;
-  state.branch=button.dataset.selectBranch;state.cart={};state.category='Все';state.query='';state.mode='Кафе';
-  dishes=[];products=[];cafeSettings=null;catalogNotice='';const label=document.querySelector('#branchLabel');if(label){label.textContent='Загружаем меню…';label.title='';}persist();updateCatalogCategories();render();
-  const params=new URLSearchParams(location.search);if(state.branch)params.set('branch',state.branch);else params.delete('branch');
-  history.replaceState(null,'',location.pathname+(params.size?'?'+params.toString():'')+location.hash);
-  document.querySelector('#branchDialog').close();const loaded=await refreshCatalog(true);
-  if(loaded)toast('Филиал изменён. Корзина очищена; приём заказов пока недоступен.');
+document.addEventListener('click',event=>{
+  const map=event.target.closest('#addressMap');
+  if(map){
+    const rect=map.getBoundingClientRect();
+    const keyboard=event.detail===0;
+    const x=keyboard?62:Math.max(8,Math.min(92,(event.clientX-rect.left)/rect.width*100));
+    const y=keyboard?46:Math.max(12,Math.min(84,(event.clientY-rect.top)/rect.height*100));
+    const pin=document.querySelector('#addressPin');if(pin){pin.style.left=x+'%';pin.style.top=y+'%';pin.classList.remove('placed');requestAnimationFrame(()=>pin.classList.add('placed'));}
+    const field=document.querySelector('#addressSearch');if(field&&!field.value.trim())field.value='ул. Ленина, 12';
+    const status=document.querySelector('#addressMapStatus');if(status)status.textContent='Точка выбрана · уточните адрес в поле выше';
+    return;
+  }
+  const confirm=event.target.closest('[data-confirm-address]');if(!confirm)return;
+  const field=document.querySelector('#addressSearch');
+  const value=field?.value.trim()||'ул. Ленина, 12';
+  deliveryAddress=value;localStorage.setItem('sof-delivery-address',deliveryAddress);
+  updateAddressHeader();document.querySelector('#branchDialog').close();toast('Адрес доставки сохранён');
+});
+document.addEventListener('input',event=>{
+  if(event.target.id!=='addressSearch')return;
+  const status=document.querySelector('#addressMapStatus');if(status)status.textContent=event.target.value.trim()?'Адрес введён · подтвердите его кнопкой ниже':'Нажмите на карту, чтобы поставить точку вручную';
 });
 if(state.branch){dishes=[];render();}
 refreshCatalog();
