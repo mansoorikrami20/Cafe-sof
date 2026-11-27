@@ -10,6 +10,13 @@ function updateCatalogCategories(){
   if(!arcCategories.some(c=>c.name===state.category))state.category='Все';
 }
 let deliveryAddress=localStorage.getItem('sof-delivery-address')||'';
+// Preview-only branch state. In production the backend/Yandex Maps supplies this result.
+const branchPreviewScenario=new URLSearchParams(location.search).get('branchScenario')||'address';
+const prototypeBranches=[
+  {id:'center',name:'Соф · Центр',address:'ул. Ленина, 12',distance:'1.2 км',nearest:true,x:49,y:43},
+  {id:'park',name:'Соф · Парковый',address:'Парковый проспект, 8',distance:'3.8 км',x:73,y:27},
+  {id:'south',name:'Соф · Южный',address:'Южная улица, 41',distance:'6.4 км',x:31,y:72}
+];
 function shortDeliveryAddress(value){
   const cleaned=String(value||'').trim().replace(/^г\.?\s*[^,]+,\s*/i,'');
   return cleaned.length>34?cleaned.slice(0,33).trim()+'…':cleaned;
@@ -32,7 +39,44 @@ function applyCafeSettings(){
     const note=document.querySelector('#view .subtle');if(note&&catalogNotice)note.textContent=catalogNotice+' Заказы и оплата не подключены.';
   }
 }
+function prototypeBranchMap(selectedId='center',single=false){
+  const branches=single?prototypeBranches.filter(branch=>branch.id===selectedId):prototypeBranches;
+  return `<div class="branch-map" role="group" aria-label="Карта филиалов">
+    <span class="map-park"></span><span class="map-water"></span>
+    <i class="map-road road-one"></i><i class="map-road road-two"></i><i class="map-road road-three"></i><i class="map-road road-four"></i>
+    <span class="map-building building-one"></span><span class="map-building building-two"></span><span class="map-building building-three"></span><span class="map-building building-four"></span>
+    <span class="map-label label-one">ул. Ленина</span><span class="map-label label-two">Садовая ул.</span><span class="map-label label-three">Центральный парк</span>
+    ${branches.map(branch=>`<button type="button" class="branch-pin ${branch.id===selectedId?'active':''}" style="left:${branch.x}%;top:${branch.y}%" data-prototype-branch="${branch.id}" aria-label="${safe(branch.name)}"><span>${svg('pin')}</span><em>${safe(branch.name)}</em></button>`).join('')}
+  </div>`;
+}
+function renderManualBranchSelector(){
+  const box=document.querySelector('#branchOptions');
+  box.innerHTML=`<p class="branch-lead">Выберите ресторан, из которого хотите оформить заказ</p>
+  <div class="prototype-branch-list">${prototypeBranches.map(branch=>`<button type="button" class="prototype-branch-card ${branch.nearest?'nearest active':''}" data-prototype-branch="${branch.id}"><span class="prototype-branch-icon">${svg('pin')}</span><span><strong>${safe(branch.name)}</strong><small>${safe(branch.address)}</small></span><span class="branch-distance">${branch.nearest?'<b>Ближайший</b>':''}<em>${branch.distance}</em></span></button>`).join('')}</div>
+  ${prototypeBranchMap('center')}
+  <button type="button" class="primary branch-confirm" data-confirm-prototype-branch="center">Выбрать Соф · Центр</button>
+  <p class="address-prototype-note">Демонстрационные расстояния · реальные данные приходят с бэкенда</p>`;
+}
+function renderAutoBranchSelector(){
+  const box=document.querySelector('#branchOptions');
+  const branch=prototypeBranches[0];
+  box.innerHTML=`<section class="auto-branch-result"><span class="auto-branch-check">${svg('check')}</span><small>ФИЛИАЛ ОПРЕДЕЛЁН</small><h3>Ваш филиал:<br>${safe(branch.name)}</h3><p>Подобран автоматически<br>по вашему адресу</p></section>
+  <article class="auto-branch-card"><span>${svg('pin')}</span><div><strong>${safe(branch.address)}</strong><small>До филиала · ${branch.distance}</small></div><b>Ближайший</b></article>
+  ${prototypeBranchMap(branch.id,true)}
+  <button type="button" class="primary branch-confirm" data-close-prototype-branch>Продолжить с этим филиалом</button>
+  <p class="address-prototype-note">Зона доставки и филиал рассчитаны через Яндекс Карты</p>`;
+}
 function openBranchSelector(){
+  const dialog=document.querySelector('#branchDialog');
+  const title=dialog.querySelector('.sheet-head h2');
+  const kicker=dialog.querySelector('.address-kicker');
+  if(branchPreviewScenario==='manual'){
+    kicker.textContent='НЕСКОЛЬКО ФИЛИАЛОВ';title.textContent='Выбор филиала';renderManualBranchSelector();dialog.showModal();return;
+  }
+  if(branchPreviewScenario==='auto'){
+    kicker.textContent='ДОСТАВКА';title.textContent='Филиал для заказа';renderAutoBranchSelector();dialog.showModal();return;
+  }
+  kicker.textContent='ДОСТАВКА';title.textContent='Укажите адрес';
   const box=document.querySelector('#branchOptions');
   const value=safe(deliveryAddress);
   box.innerHTML=`<label class="address-search">${svg('search')}<input id="addressSearch" type="search" autocomplete="street-address" placeholder="Введите улицу и дом" value="${value}" aria-label="Адрес доставки"></label>
@@ -46,7 +90,7 @@ function openBranchSelector(){
   <div class="address-map-note"><span class="address-pulse"></span><p id="addressMapStatus">${deliveryAddress?'Адрес сохранён. Можно выбрать другую точку.':'Нажмите на карту, чтобы поставить точку вручную'}</p></div>
   <button type="button" class="primary address-confirm" data-confirm-address>Подтвердить адрес</button>
   <p class="address-prototype-note">Демонстрационная карта · геокодирование не подключено</p>`;
-  document.querySelector('#branchDialog').showModal();
+  dialog.showModal();
   requestAnimationFrame(()=>document.querySelector('#addressSearch')?.focus({preventScroll:true}));
 }
 const renderBeforeCatalog=render;
@@ -80,6 +124,23 @@ async function refreshCatalog(force=false){
   }
 }
 document.addEventListener('click',event=>{
+  const branchChoice=event.target.closest('[data-prototype-branch]');
+  if(branchChoice){
+    const id=branchChoice.dataset.prototypeBranch;
+    const branch=prototypeBranches.find(item=>item.id===id);if(!branch)return;
+    document.querySelectorAll('[data-prototype-branch]').forEach(item=>item.classList.toggle('active',item.dataset.prototypeBranch===id));
+    const confirm=document.querySelector('[data-confirm-prototype-branch]');
+    if(confirm){confirm.dataset.confirmPrototypeBranch=id;confirm.textContent='Выбрать '+branch.name;}
+    return;
+  }
+  const confirmBranch=event.target.closest('[data-confirm-prototype-branch]');
+  if(confirmBranch){
+    const branch=prototypeBranches.find(item=>item.id===confirmBranch.dataset.confirmPrototypeBranch)||prototypeBranches[0];
+    document.querySelector('#branchDialog').close();toast('Выбран филиал: '+branch.name);return;
+  }
+  if(event.target.closest('[data-close-prototype-branch]')){
+    document.querySelector('#branchDialog').close();toast('Филиал подтверждён');return;
+  }
   const map=event.target.closest('#addressMap');
   if(map){
     const rect=map.getBoundingClientRect();
