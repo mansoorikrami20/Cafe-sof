@@ -15,6 +15,7 @@ const state={page:'menu',category:'Все',mode:'Кафе',query:'',cart:{},favo
 // In production these add-on flags are supplied by the restaurant admin/backend.
 let showMenuTranslation=true;
 let enabledPaymentMethods=['card','sbp','cash'];
+let lastOrder=null;
 
 // Preview-only overrides let us display both enabled and disabled states without changing backend data.
 const addOnPreviewParams=new URLSearchParams(location.search);
@@ -24,8 +25,11 @@ if(addOnPreviewParams.has('payments')){
 }
 try{const v=JSON.parse(localStorage.getItem('sof-prototype')||'{}');state.cart=v.cart||{};state.favorites=v.favorites||[]}catch{}
 // Preview-only checkout data. In production these values come from the signed-in customer profile.
-const checkoutPreview=new URLSearchParams(location.search).get('checkoutDemo')==='saved';
+const previewParams=new URLSearchParams(location.search);
+const checkoutPreview=previewParams.get('checkoutDemo')==='saved';
+const receiptPreview=previewParams.get('receiptDemo')==='paid';
 if(checkoutPreview){state.cart={plov:1,kazan:1};state.page='checkout'}
+if(receiptPreview){state.cart={plov:1,kazan:1};state.page='success';lastOrder={number:'024681',payment:'Картой',createdAt:new Date(),total:1000};}
 let deliveryDetails={type:'apartment',flat:'',entrance:'',floor:'',intercom:'',leaveAtDoor:false};
 try{Object.assign(deliveryDetails,JSON.parse(localStorage.getItem('sof-delivery-details')||'{}'))}catch{}
 if(checkoutPreview&&!deliveryDetails.flat)Object.assign(deliveryDetails,{type:'apartment',flat:'45',entrance:'2',floor:'7',intercom:'45'});
@@ -71,6 +75,38 @@ const addressLabel='Филиал самовывоза';
 const addressPlaceholder='Выберите филиал';
 return pageHead('Оформление')+steps+`<form id="checkoutForm">${choices}<div class="panel checkout-details"><div class="section-heading"><span>2</span><div><h2>Данные для заказа</h2><p>Сообщим, когда заказ будет готов</p></div></div><label class="field checkout-field"><span>Ваше имя</span><div class="input-shell">${svg('person')}<input name="name" autocomplete="given-name" required placeholder="Как к вам обращаться?"></div></label><label class="field checkout-field"><span>Телефон</span><div class="input-shell">${svg('phone')}<input name="phone" type="tel" autocomplete="tel" required minlength="10" placeholder="+7 (___) ___-__-__"></div></label><label class="field checkout-field" id="addressField"><span>${addressLabel}</span><div class="input-shell">${svg('pickup')}<input name="address" required placeholder="${addressPlaceholder}"></div></label>${commentField}</div>${paymentMethodsMarkup()}<div class="panel checkout-total"><h2>Ваш заказ</h2>${summary()}<button class="primary checkout-submit" type="submit">Оформить самовывоз · ${money(total())}</button><p class="secure-note">${svg('check')} Проверим данные перед подтверждением</p></div></form>`}
 
+function successReceipt(){
+  const settings=typeof cafeSettings!=='undefined'&&cafeSettings?cafeSettings:{};
+  const restaurantName=String(settings.name||'Соф');
+  const logoUrl=String(settings.logoUrl||'');
+  const order=lastOrder||{number:String(Date.now()).slice(-6),payment:'Картой',createdAt:new Date(),total:total()};
+  const items=allItems().filter(item=>qty(item.id));
+  const itemRows=items.map(item=>`<div class="receipt-line"><span>${qty(item.id)} × ${safe(String(item.name))}</span><strong>${money(item.price*qty(item.id))}</strong></div>`).join('');
+  const logo=logoUrl?`<img src="${safe(logoUrl)}" alt="Логотип ${safe(restaurantName)}">`:`<span aria-label="Логотип ${safe(restaurantName)}">${safe(restaurantName.slice(0,3).toUpperCase())}</span>`;
+  const paidAt=new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(order.createdAt||new Date());
+  return `<section class="receipt-success" aria-labelledby="receiptSuccessTitle">
+    <div class="receipt-printer" aria-label="Печатается чек">
+      <div class="printer-top"><i></i></div>
+      <div class="printer-slot"></div>
+      <div class="receipt-window">
+        <article class="printed-receipt">
+          <header class="receipt-brand"><div><strong>${safe(restaurantName)}</strong><small>ЭЛЕКТРОННЫЙ ЧЕК</small></div><div class="receipt-logo">${logo}</div></header>
+          <div class="receipt-paid"><span>${svg('check')}</span><div><small>ОПЛАТА ПРОШЛА</small><strong>${money(order.total??total())}</strong></div></div>
+          <div class="receipt-meta"><span>Заказ № ${safe(String(order.number))}</span><span>${safe(paidAt)}</span></div>
+          <div class="receipt-rule"></div>
+          <div class="receipt-lines">${itemRows||'<div class="receipt-line"><span>Заказ принят</span><strong>Оплачено</strong></div>'}</div>
+          <div class="receipt-rule"></div>
+          <div class="receipt-line receipt-total"><span>ИТОГО</span><strong>${money(order.total??total())}</strong></div>
+          <div class="receipt-line receipt-method"><span>Способ оплаты</span><strong>${safe(String(order.payment||'Картой'))}</strong></div>
+          <footer><strong>Спасибо за заказ!</strong><small>Статус заказа появится в разделе «Мои заказы»</small><div class="receipt-barcode" aria-hidden="true"></div><span>SOF-${safe(String(order.number))}</span></footer>
+        </article>
+      </div>
+      <div class="printer-bottom"></div>
+    </div>
+    <div class="receipt-success-copy"><span class="success-check">${svg('check')}</span><h1 id="receiptSuccessTitle">Оплата прошла</h1><p>Заказ принят. Ваш чек готов.</p><button class="primary" data-page="menu">Вернуться в меню</button></div>
+  </section>`;
+}
+
 const preferences={sound:true,haptics:true};
 let localProfile={name:'',phone:'',email:'',address:''};
 try{Object.assign(preferences,JSON.parse(localStorage.getItem('sof-feedback')||'{}'));Object.assign(localProfile,JSON.parse(localStorage.getItem('sof-local-profile')||'{}'))}catch{}
@@ -90,14 +126,14 @@ else if(kind==='yandex'||kind==='max'){d.innerHTML=head(kind==='yandex'?'Вхо�
 else{d.innerHTML=head('Помощь и информация')+`<p class="muted">Это демонстрационная версия «Соф». Реальные заказы, оплата и вход ещё не подключены.</p><p class="muted">Контакты ресторана, правила доставки и документы появятся перед запуском.</p><button class="primary" onclick="this.closest('dialog').close()">Понятно</button>`}d.showModal()}
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.auth)openAccountSheet(b.dataset.auth);if(b.dataset.profile)openAccountSheet(b.dataset.profile);if(b.dataset.menuLanguage){document.querySelector('#accountDialog').close();toast('Язык меню выбран: '+b.querySelector('strong').textContent)}if(b.dataset.setting){unlockFeedback();const key=b.dataset.setting;preferences[key]=!preferences[key];localStorage.setItem('sof-feedback',JSON.stringify(preferences));render();if(preferences[key])selectionFeedback()}});
 document.addEventListener('submit',e=>{if(e.target.id==='localProfileForm'){e.preventDefault();for(const key of ['name','phone','email','address']){const input=e.target.querySelector(`[name="${key}"]`);if(input)localProfile[key]=input.value.trim()}localStorage.setItem('sof-local-profile',JSON.stringify(localProfile));document.querySelector('#accountDialog').close();render();toast('Сохранено на этом устройстве')}if(e.target.id==='deliveryDetailsForm'){e.preventDefault();const data=new FormData(e.target);deliveryDetails={type:data.get('type')||'apartment',flat:String(data.get('flat')||'').trim(),entrance:String(data.get('entrance')||'').trim(),floor:String(data.get('floor')||'').trim(),intercom:String(data.get('intercom')||'').trim(),leaveAtDoor:data.get('leaveAtDoor')==='on'};if(deliveryDetails.type==='house')Object.assign(deliveryDetails,{flat:'',entrance:'',floor:'',intercom:''});localStorage.setItem('sof-delivery-details',JSON.stringify(deliveryDetails));document.querySelector('#accountDialog').close();render();toast('Детали доставки сохранены')}if(e.target.id==='phoneAuthForm'){e.preventDefault();toast('SMS-вход ещё не подключён. Код не отправлен.')}});
-function render(){document.querySelector('#view').innerHTML=state.page==='menu'?menu():state.page==='cart'?cart():state.page==='checkout'?checkout():state.page==='favorites'?pageHead('Избранное')+(state.favorites.length?`<div class="grid">${allItems().filter(p=>state.favorites.includes(p.id)).map(card).join('')}</div>`:empty('heart','Любимое — рядом','Нажмите на сердечко у понравившегося блюда.')):state.page==='orders'?pageHead('Мои заказы')+empty('orders','Пока нет заказов','После подключения сервиса здесь появится история.'):state.page==='success'?`<div class="success"><div class="icon-box">${svg('check')}</div><h2>Оформление проверено</h2><p>Это демонстрация оформления.<br>Это тест: ресторан заказ не получил,<br>оплата не списывалась.</p><button class="primary" data-page="menu">Вернуться в меню</button></div>`:profile();document.querySelector('#nav').innerHTML=`<div class="bottom-nav">${[['menu','home','Меню'],['favorites','heart','Избранное'],['orders','orders','Заказы'],['cart','bag','Корзина'],['profile','user','Профиль']].map(([p,icon,label])=>`<button data-page="${p}" aria-label="${label}" ${state.page===p?'aria-current="page"':''} class="${state.page===p?'active':''}">${svg(icon)}${p==='cart'&&count()?`<span class="nav-count">${count()}</span>`:''}</button>`).join('')}</div>${count()&&['menu','favorites'].includes(state.page)?`<button class="cart-floating" data-page="cart"><small>В корзине · ${count()} шт.</small><strong>${money(total())}</strong><span class="round">${svg('bag')}</span></button>`:''}`;const b=document.querySelector('#cartBadge');b.hidden=!count();b.textContent=count();hydrate()}
+function render(){document.querySelector('#view').innerHTML=state.page==='menu'?menu():state.page==='cart'?cart():state.page==='checkout'?checkout():state.page==='favorites'?pageHead('Избранное')+(state.favorites.length?`<div class="grid">${allItems().filter(p=>state.favorites.includes(p.id)).map(card).join('')}</div>`:empty('heart','Любимое — рядом','Нажмите на сердечко у понравившегося блюда.')):state.page==='orders'?pageHead('Мои заказы')+empty('orders','Пока нет заказов','После подключения сервиса здесь появится история.'):state.page==='success'?successReceipt():profile();document.querySelector('#nav').innerHTML=`<div class="bottom-nav">${[['menu','home','Меню'],['favorites','heart','Избранное'],['orders','orders','Заказы'],['cart','bag','Корзина'],['profile','user','Профиль']].map(([p,icon,label])=>`<button data-page="${p}" aria-label="${label}" ${state.page===p?'aria-current="page"':''} class="${state.page===p?'active':''}">${svg(icon)}${p==='cart'&&count()?`<span class="nav-count">${count()}</span>`:''}</button>`).join('')}</div>${count()&&['menu','favorites'].includes(state.page)?`<button class="cart-floating" data-page="cart"><small>В корзине · ${count()} шт.</small><strong>${money(total())}</strong><span class="round">${svg('bag')}</span></button>`:''}`;const b=document.querySelector('#cartBadge');b.hidden=!count();b.textContent=count();hydrate()}
 function navigate(p){state.page=p;render();window.scrollTo({top:0,behavior:'instant'})}
 function showProduct(id){const p=allItems().find(p=>p.id===id);if(!p)return;const d=document.querySelector('#productDialog');d.innerHTML=`<div class="sheet-head"><small class="muted">${safe(p.category)}</small><button class="circle" aria-label="Закрыть" onclick="this.closest('dialog').close()">✕</button></div><img class="detail-photo" src="${foodImage(p)}" alt="${safe(p.name)}"><h2 class="detail-name">${safe(p.name)}</h2><span class="detail-weight">${safe(p.weight)}</span><p class="detail-desc">${safe(p.desc)}</p><div class="price-row"><span class="price">${money(p.price)}</span>${counter(p)}</div><button class="primary" onclick="this.closest('dialog').close()">Вернуться к меню</button>`;if(!d.open)d.showModal()}
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-product]');if(!b||b.disabled)return;if(b.dataset.delta)change(b.dataset.id,Number(b.dataset.delta));else if(b.dataset.favorite)favorite(b.dataset.favorite);else if(b.dataset.product)showProduct(b.dataset.product);else if(b.dataset.page)navigate(b.dataset.page);else if(b.dataset.category){selectArcCategory(b)}else if(b.dataset.mode){state.mode=b.dataset.mode;state.category='Все';state.query='';updateCatalogCategories();render()}else if(['branchButton','profileBranch','checkoutAddressButton'].includes(b.id))openBranchSelector();else if(b.id==='headerCart')navigate('cart');else if(b.id==='translationButton')openTranslationSheet();else if(b.id==='filterButton'){state.category='Все';state.query='';render();toast('Показаны все блюда')}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.product)showProduct(e.target.dataset.product)});
 document.addEventListener('input',e=>{if(e.target.id==='search'){const pos=e.target.selectionStart;state.query=e.target.value;render();const s=document.querySelector('#search');s.focus();s.setSelectionRange(pos,pos)}});
 document.addEventListener('change',e=>{if(e.target.name==='type'&&e.target.closest('#deliveryDetailsForm')){const fields=e.target.closest('form').querySelector('.delivery-detail-fields');if(fields)fields.hidden=e.target.value==='house'}if(e.target.name==='fulfillment'){state.fulfillment=e.target.value;const values=Object.fromEntries(new FormData(document.querySelector('#checkoutForm')));render();const f=document.querySelector('#checkoutForm');for(const [k,v]of Object.entries(values)){const input=f.querySelector(`[name="${k}"]:not([type="radio"])`);if(input&&k!=='address')input.value=v}}});
-document.addEventListener('submit',e=>{if(e.target.id==='checkoutForm'){e.preventDefault();navigate('success')}});
+document.addEventListener('submit',e=>{if(e.target.id==='checkoutForm'){e.preventDefault();const data=new FormData(e.target);const paymentId=String(data.get('payment')||'cash');lastOrder={number:String(Date.now()).slice(-6),payment:paymentMethodMeta[paymentId]?.label||'При получении',createdAt:new Date(),total:total()};navigate('success')}});
 
 let arcCategories=[{name:'Горячее',image:'kazan'},{name:'Говядина',image:'roast'},{name:'Все',image:'plov'},{name:'Супы',image:'shurpa'},{name:'Баранина',image:'kazan'}];
 function visibleItems(){return state.mode==='Продукты'?products:dishes}
