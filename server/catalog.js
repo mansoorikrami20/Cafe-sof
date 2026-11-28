@@ -53,7 +53,6 @@ export function cleanMenu(input){
   if(!Array.isArray(paymentMethods)||paymentMethods.length>allowedPaymentMethods.size||paymentMethods.some(method=>!allowedPaymentMethods.has(method))||new Set(paymentMethods).size!==paymentMethods.length)invalid('Проверьте подключённые способы оплаты.');
   settings.enabledPaymentMethods=[...paymentMethods];
   settings.showCourierTips=bool(input.settings.showCourierTips??false,'Чаевые курьеру');
-  settings.showStaffTips=bool(input.settings.showStaffTips??false,'Чаевые персоналу');
   return {schemaVersion:2,categories:dishCategories,productCategories,dishes,products,branches,settings};
 }
 export function publicMenu(doc,{branchId,now=Date.now()}={}){
