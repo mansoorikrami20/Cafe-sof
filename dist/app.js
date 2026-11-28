@@ -15,7 +15,7 @@ const state={page:'menu',category:'Все',mode:'Кафе',query:'',cart:{},favo
 // In production these add-on flags are supplied by the restaurant admin/backend.
 let showMenuTranslation=true;
 let enabledPaymentMethods=['card','sbp','cash','terminal'];
-let showCourierTips=false;
+let showCourierTips=true;
 let lastOrder=null;
 
 // Preview-only overrides let us display both enabled and disabled states without changing backend data.
