@@ -1,6 +1,6 @@
 // Extends the existing cabinet; it never enables saving in preview mode.
 function normalizeAdminMenu(menu){
-  return {...menu,schemaVersion:2,settings:{...menu.settings,enabledPaymentMethods:Array.isArray(menu.settings?.enabledPaymentMethods)?menu.settings.enabledPaymentMethods:['card','sbp','cash','terminal']},products:menu.products||[],productCategories:menu.productCategories||[{id:'groceries',name:'Продукты'}],branches:menu.branches?.length===4?menu.branches:Array.from({length:4},(_,i)=>({id:`branch-${i+1}`,name:'',address:'',phone:'',opensAt:'09:00',closesAt:'00:00',breakfastUntil:'11:00',deliveryNote:'',enabled:false,iiko:{organizationId:'',terminalGroupId:''}}))};
+  return {...menu,schemaVersion:2,settings:{...menu.settings,enabledPaymentMethods:Array.isArray(menu.settings?.enabledPaymentMethods)?menu.settings.enabledPaymentMethods:['card','sbp','cash','terminal'],showCourierTips:menu.settings?.showCourierTips===true},products:menu.products||[],productCategories:menu.productCategories||[{id:'groceries',name:'Продукты'}],branches:menu.branches?.length===4?menu.branches:Array.from({length:4},(_,i)=>({id:`branch-${i+1}`,name:'',address:'',phone:'',opensAt:'09:00',closesAt:'00:00',breakfastUntil:'11:00',deliveryNote:'',enabled:false,iiko:{organizationId:'',terminalGroupId:''}}))};
 }
 function itemInStock(item){return item.available&&(item.stock==null||item.stock>0);}
 function currentItems(){return state.menu[state.page==='products'?'products':'dishes'];}
