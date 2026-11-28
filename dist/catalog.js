@@ -115,7 +115,7 @@ async function refreshCatalog(force=false){
     catalogCategories=data.categories;productCategories=data.productCategories||[];catalogBranches=data.branches||[];
     const enrich=(items,categories)=>items.map(d=>({...d,category:categories.find(c=>c.id===d.categoryId)?.name||'Каталог',weight:d.unit?(d.weight||'за 1 '+d.unit):d.weight}));
     dishes=enrich(data.dishes,catalogCategories);products=enrich(data.products||[],productCategories);
-    updateCatalogCategories();clearUnavailableCart();cafeSettings=data.settings;catalogNotice=data.notice||'';render();
+    updateCatalogCategories();clearUnavailableCart();cafeSettings=data.settings;if(!paymentPreviewOverride&&Array.isArray(cafeSettings?.enabledPaymentMethods))enabledPaymentMethods=[...cafeSettings.enabledPaymentMethods];catalogNotice=data.notice||'';render();
     return true;
   }catch(error){
     if(request!==catalogRequest||branch!==state.branch)return;
