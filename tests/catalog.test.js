@@ -29,7 +29,8 @@ test('server rejects invalid products, branch settings, overrides and cross-cata
     m=>m.dishes[0].branchOverrides={'branch-9':assignment()},m=>m.dishes[0].branchOverrides={'branch-1':assignment({assigned:'yes'})},
     m=>m.dishes[0].branchOverrides={'branch-1':assignment({price:-1})},m=>m.products.push({...product(),categoryId:'hot'}),
     m=>m.products.push({...product(),imageUrl:'https://tracking.example/a.png'}),
-    m=>m.settings.logoUrl='https://tracking.example/logo.png'
+    m=>m.settings.logoUrl='https://tracking.example/logo.png',
+    m=>m.settings.enabledPaymentMethods=['card','crypto']
   ]){const menu=clone();mutate(menu);assert.throws(()=>cleanMenu(menu),{status:400});}
 });
 test('branch projection applies assignments, independent prices, hiding, stock and global stop-list',()=>{
