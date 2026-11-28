@@ -20,7 +20,8 @@ let lastOrder=null;
 // Preview-only overrides let us display both enabled and disabled states without changing backend data.
 const addOnPreviewParams=new URLSearchParams(location.search);
 if(addOnPreviewParams.get('translation')==='off')showMenuTranslation=false;
-if(addOnPreviewParams.has('payments')){
+const paymentPreviewOverride=addOnPreviewParams.has('payments');
+if(paymentPreviewOverride){
   enabledPaymentMethods=addOnPreviewParams.get('payments').split(',').filter(Boolean);
 }
 try{const v=JSON.parse(localStorage.getItem('sof-prototype')||'{}');state.cart=v.cart||{};state.favorites=v.favorites||[]}catch{}
@@ -56,7 +57,8 @@ function paymentMethodsMarkup(mode=state.fulfillment){
   const onsite=mode==='За столом'||mode==='Самовывоз';
   const order=onsite?['cash','terminal','card','sbp']:['card','sbp','cash'];
   const methods=order.filter(id=>enabledPaymentMethods.includes(id)&&paymentMethodMeta[id]);
-  const visible=methods.length?methods:['cash'];
+  const visible=methods;
+  if(!visible.length)return '';
   const descriptions={
     'За столом':{cash:'Оплата официанту',terminal:'Принесём терминал',card:'Оплата онлайн',sbp:'Оплата онлайн'},
     'Самовывоз':{cash:'При получении',terminal:'При получении',card:'Оплата онлайн',sbp:'Оплата онлайн'},
