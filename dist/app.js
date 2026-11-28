@@ -14,7 +14,7 @@ const state={page:'menu',category:'Все',mode:'Кафе',query:'',cart:{},favo
 
 // In production these add-on flags are supplied by the restaurant admin/backend.
 let showMenuTranslation=true;
-let enabledPaymentMethods=['card','sbp','cash'];
+let enabledPaymentMethods=['card','sbp','cash','terminal'];
 let lastOrder=null;
 
 // Preview-only overrides let us display both enabled and disabled states without changing backend data.
@@ -28,7 +28,9 @@ try{const v=JSON.parse(localStorage.getItem('sof-prototype')||'{}');state.cart=v
 const previewParams=new URLSearchParams(location.search);
 const checkoutPreview=previewParams.get('checkoutDemo')==='saved';
 const receiptPreview=previewParams.get('receiptDemo')==='paid';
+const checkoutModePreview=previewParams.get('checkoutMode');
 if(checkoutPreview){state.cart={plov:1,kazan:1};state.page='checkout'}
+if(checkoutModePreview==='table'||checkoutModePreview==='pickup'){state.cart={plov:1,kazan:1};state.page='checkout';state.fulfillment=checkoutModePreview==='table'?'За столом':'Самовывоз'}
 if(receiptPreview){state.cart={plov:1,kazan:1};state.page='success';lastOrder={number:'024681',payment:'Картой',createdAt:new Date(),total:1000};}
 let deliveryDetails={type:'apartment',flat:'',entrance:'',floor:'',intercom:'',leaveAtDoor:false};
 try{Object.assign(deliveryDetails,JSON.parse(localStorage.getItem('sof-delivery-details')||'{}'))}catch{}
@@ -45,14 +47,22 @@ function summary(mode=state.fulfillment){const service=mode==='За столом
 function cart(){return pageHead('Ваша корзина')+(count()?`<div class="cart-list">${allItems().filter(p=>qty(p.id)).map(p=>`<article class="cart-item"><img src="${foodImage(p)}" alt="${safe(p.name)}"><div class="cart-details"><h3>${safe(p.name)}</h3><small>${safe(p.weight)}</small><div class="price-row"><span class="price">${money(p.price*qty(p.id))}</span>${counter(p)}</div></div></article>`).join('')}</div><div class="panel"><h2>Ваш заказ</h2>${summary()}<button class="primary" data-page="checkout">Оформить заказ</button></div><p class="subtle">Стоимость доставки будет определена после настройки зон.</p>`:empty('bag','Пока пусто','Добавьте что-нибудь вкусное из меню.'))}
 function empty(icon,title,desc){return `<div class="empty"><span class="icon-box">${svg(icon)}</span><h2>${title}</h2><p>${desc}</p><button class="primary" data-page="menu">Открыть меню</button></div>`}
 const paymentMethodMeta={
-  card:{label:'Картой',icon:'card'},
-  sbp:{label:'СБП',icon:'sbp'},
+  card:{label:'Сохранённой картой',icon:'card'},
+  terminal:{label:'Картой через терминал',icon:'card'},
+  sbp:{label:'Через СБП',icon:'sbp'},
   cash:{label:'Наличными',icon:'cash'}
 };
-function paymentMethodsMarkup(){
-  const methods=enabledPaymentMethods.filter(id=>paymentMethodMeta[id]);
+function paymentMethodsMarkup(mode=state.fulfillment){
+  const onsite=mode==='За столом'||mode==='Самовывоз';
+  const order=onsite?['cash','terminal','card','sbp']:['card','sbp','cash'];
+  const methods=order.filter(id=>enabledPaymentMethods.includes(id)&&paymentMethodMeta[id]);
   const visible=methods.length?methods:['cash'];
-  return `<div class="panel checkout-payment"><div class="section-heading"><span>3</span><div><h2>Способ оплаты</h2><p>Выберите удобный вариант</p></div></div><div class="payment-grid">${visible.map((id,index)=>{const method=paymentMethodMeta[id];return `<label class="payment-card ${index===0?'selected':''}"><input type="radio" name="payment" value="${id}" ${index===0?'checked':''}><span>${svg(method.icon)}</span><strong>${method.label}</strong></label>`}).join('')}</div></div>`;
+  const descriptions={
+    'За столом':{cash:'Оплата официанту',terminal:'Принесём терминал',card:'Оплата онлайн',sbp:'Оплата онлайн'},
+    'Самовывоз':{cash:'При получении',terminal:'При получении',card:'Оплата онлайн',sbp:'Оплата онлайн'},
+    'Доставка':{cash:'При получении',card:'Оплата онлайн',sbp:'Оплата онлайн'}
+  };
+  return `<div class="panel checkout-payment"><div class="section-heading"><span>3</span><div><h2>Способ оплаты</h2><p>Выберите удобный вариант</p></div></div><div class="payment-grid">${visible.map((id,index)=>{const method=paymentMethodMeta[id],hint=descriptions[mode]?.[id]||'';return `<label class="payment-card ${index===0?'selected':''}"><input type="radio" name="payment" value="${id}" ${index===0?'checked':''}><span>${svg(method.icon)}</span><span class="payment-copy"><strong>${method.label}</strong>${hint?`<small>${hint}</small>`:''}</span></label>`}).join('')}</div></div>`;
 }
 function checkout(){if(!count())return cart();
 const options=[
@@ -63,7 +73,7 @@ const options=[
 const choices=`<div class="panel checkout-methods"><div class="section-heading"><span>1</span><div><h2>Как получить заказ?</h2><p>Выберите удобный способ</p></div></div><div class="fulfillment-grid">${options.map(o=>`<label class="fulfillment-card ${o.value===state.fulfillment?'selected':''}"><input type="radio" name="fulfillment" value="${o.value}" ${o.value===state.fulfillment?'checked':''}><span class="fulfillment-icon">${svg(o.icon)}</span><span class="fulfillment-copy"><strong>${o.title}</strong><small>${o.desc}</small></span><span class="choice-check">${svg('check')}</span></label>`).join('')}</div></div>`;
 const steps=`<div class="checkout-steps" aria-label="Этапы оформления"><span class="done"><em>${svg('check')}</em><small>Корзина</small></span><b></b><span class="active"><em>2</em><small>Детали</small></span><b></b><span><em>3</em><small>Готово</small></span></div>`;
 const commentField=`<label class="field checkout-field checkout-comment"><span>Комментарий к заказу <i>необязательно</i></span><div class="input-shell textarea-shell">${svg('note')}<textarea name="comment" placeholder="Например: не добавлять лук, позвонить перед доставкой"></textarea></div></label>`;
-if(state.fulfillment==='За столом')return pageHead('Оформление')+steps+`<form id="checkoutForm">${choices}<div class="panel table-order-panel"><div class="section-heading"><span>2</span><div><h2>Укажите номер стола</h2><p>Больше ничего заполнять не нужно</p></div></div><label class="field checkout-field table-number"><span>Номер стола</span><div class="input-shell">${svg('table')}<input name="address" type="number" inputmode="numeric" min="1" max="999" required placeholder="Например, 12" aria-label="Номер стола"></div></label><div class="table-hint">${svg('check')}<span>Заказ передадим сотрудникам этого филиала</span></div>${commentField}</div><div class="panel checkout-total"><h2>Ваш заказ</h2>${summary('За столом')}<button class="primary checkout-submit" type="submit">Заказать к столу · ${money(total())}</button></div></form>`;
+if(state.fulfillment==='За столом')return pageHead('Оформление')+steps+`<form id="checkoutForm">${choices}<div class="panel table-order-panel"><div class="section-heading"><span>2</span><div><h2>Укажите номер стола</h2><p>Больше ничего заполнять не нужно</p></div></div><label class="field checkout-field table-number"><span>Номер стола</span><div class="input-shell">${svg('table')}<input name="address" type="number" inputmode="numeric" min="1" max="999" required placeholder="Например, 12" aria-label="Номер стола"></div></label><div class="table-hint">${svg('check')}<span>Заказ передадим сотрудникам этого филиала</span></div>${commentField}</div>${paymentMethodsMarkup('За столом')}<div class="panel checkout-total"><h2>Ваш заказ</h2>${summary('За столом')}<button class="primary checkout-submit" type="submit">Заказать к столу · ${money(total())}</button></div></form>`;
 if(state.fulfillment==='Доставка'){
   const savedAddress=(typeof deliveryAddress!=='undefined'&&deliveryAddress)||localProfile.address||(checkoutPreview?'ул. Ленина, 12':'');
   const recipientName=localProfile.name||(checkoutPreview?'Мансур':'Получатель не указан');
@@ -73,7 +83,7 @@ if(state.fulfillment==='Доставка'){
 }
 const addressLabel='Филиал самовывоза';
 const addressPlaceholder='Выберите филиал';
-return pageHead('Оформление')+steps+`<form id="checkoutForm">${choices}<div class="panel checkout-details"><div class="section-heading"><span>2</span><div><h2>Данные для заказа</h2><p>Сообщим, когда заказ будет готов</p></div></div><label class="field checkout-field"><span>Ваше имя</span><div class="input-shell">${svg('person')}<input name="name" autocomplete="given-name" required placeholder="Как к вам обращаться?"></div></label><label class="field checkout-field"><span>Телефон</span><div class="input-shell">${svg('phone')}<input name="phone" type="tel" autocomplete="tel" required minlength="10" placeholder="+7 (___) ___-__-__"></div></label><label class="field checkout-field" id="addressField"><span>${addressLabel}</span><div class="input-shell">${svg('pickup')}<input name="address" required placeholder="${addressPlaceholder}"></div></label>${commentField}</div>${paymentMethodsMarkup()}<div class="panel checkout-total"><h2>Ваш заказ</h2>${summary()}<button class="primary checkout-submit" type="submit">Оформить самовывоз · ${money(total())}</button><p class="secure-note">${svg('check')} Проверим данные перед подтверждением</p></div></form>`}
+return pageHead('Оформление')+steps+`<form id="checkoutForm">${choices}<div class="panel checkout-details"><div class="section-heading"><span>2</span><div><h2>Данные для заказа</h2><p>Сообщим, когда заказ будет готов</p></div></div><label class="field checkout-field"><span>Ваше имя</span><div class="input-shell">${svg('person')}<input name="name" autocomplete="given-name" required placeholder="Как к вам обращаться?"></div></label><label class="field checkout-field"><span>Телефон</span><div class="input-shell">${svg('phone')}<input name="phone" type="tel" autocomplete="tel" required minlength="10" placeholder="+7 (___) ___-__-__"></div></label><label class="field checkout-field" id="addressField"><span>${addressLabel}</span><div class="input-shell">${svg('pickup')}<input name="address" required placeholder="${addressPlaceholder}"></div></label>${commentField}</div>${paymentMethodsMarkup('Самовывоз')}<div class="panel checkout-total"><h2>Ваш заказ</h2>${summary()}<button class="primary checkout-submit" type="submit">Оформить самовывоз · ${money(total())}</button><p class="secure-note">${svg('check')} Проверим данные перед подтверждением</p></div></form>`}
 
 function successReceipt(){
   const settings=typeof cafeSettings!=='undefined'&&cafeSettings?cafeSettings:{};
