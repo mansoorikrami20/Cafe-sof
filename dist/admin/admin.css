@@ -23,3 +23,13 @@
 .payment-setting:has(input:checked){border-color:#ff9b77;background:#fff7f3}
 .payment-setting input:checked+.payment-setting-check{border-color:var(--orange);background:var(--orange);color:#fff}
 @media(max-width:700px){.payment-settings-grid{grid-template-columns:1fr}}
+
+
+.service-setting{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:12px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fafbf7;cursor:pointer}
+.service-setting input{position:absolute;opacity:0;pointer-events:none}
+.service-setting-check{width:32px;height:32px;display:grid;place-items:center;border:1px solid #cfd3c6;border-radius:10px;background:#fff;color:transparent;font-weight:800}
+.service-setting strong,.service-setting small{display:block}
+.service-setting strong{font-size:13px}
+.service-setting small{margin-top:4px;color:var(--muted);font-size:10px;line-height:1.5}
+.service-setting:has(input:checked){border-color:#ff9b77;background:#fff7f3}
+.service-setting input:checked+.service-setting-check{border-color:var(--orange);background:var(--orange);color:#fff}
