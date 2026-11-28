@@ -22,8 +22,9 @@ export function signSession(admin,secret,now=Date.now()){
   const payload=Buffer.from(JSON.stringify({exp:now+8*3600000,v:admin.sessionVersion,email:admin.email})).toString('base64url');
   return payload+'.'+createHmac('sha256',secret).update(payload).digest('base64url');
 }
-export function verifySession(token,admin,secret,now=Date.now()){
+export function verifySession(token,admin,secret,now=Date.now(),requireVerifiedEmail=false){
   if(!admin||!secret||typeof token!=='string'||token.length>2000)return false;
+  if(requireVerifiedEmail&&!admin.emailVerifiedAt)return false;
   const parts=token.split('.');if(parts.length!==2)return false;
   if(!equal(parts[1],createHmac('sha256',secret).update(parts[0]).digest('base64url')))return false;
   try{const p=JSON.parse(Buffer.from(parts[0],'base64url').toString());return Number.isFinite(p.exp)&&p.exp>now&&p.exp<=now+8*3600000&&p.v===admin.sessionVersion&&equal(p.email,admin.email);}catch{return false;}

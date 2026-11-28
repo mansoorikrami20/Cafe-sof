@@ -63,6 +63,6 @@ test('iiko adapter uses only fixed HTTPS endpoints, validates organization acces
   await assert.rejects(()=>checkIikoAccess(sample,'',{fetchImpl:async()=>new Response(JSON.stringify(sample),{status:401})}),e=>e.code==='credentials'&&!e.message.includes(sample.clientSecret));
 });
 test('vault uses a separate private object and ETag checks',async()=>{
-  const calls=[];const adapter=createVaultStorage({get:async(path,options)=>{calls.push({path,options});return null;},put:async(...args)=>calls.push(args)});const empty=await adapter.readVault();assert.equal(empty.vault.revision,0);assert.equal(calls[0].path,'sof-private/integrations-v1.json');assert.deepEqual(calls[0].options,{access:'private',useCache:false});
+  const calls=[];const adapter=createVaultStorage({get:async(path,options)=>{calls.push({path,options});return null;},put:async(...args)=>calls.push(args)});const empty=await adapter.readVault();assert.equal(empty.vault.revision,0);assert.equal(calls[0].path,'sof-private/integrations-v1.json');assert.deepEqual(calls[0].options,{access:'private',useCache:false,headers:{'Accept-Encoding':'identity'}});
   await adapter.writeVault(empty.vault,'etag');assert.equal(calls[1][2].access,'private');assert.equal(calls[1][2].ifMatch,'etag');assert.equal(calls[1][2].allowOverwrite,true);
 });

@@ -46,6 +46,13 @@ export function cleanMenu(input){
   }
   const dishes=items(input.dishes,dishCategories),products=items(input.products??[],productCategories,true);
   const settings=Object.fromEntries(['name','tagline','phone','address','hours','deliveryNote'].map(k=>[k,string(input.settings[k]??'',k,k==='deliveryNote'?600:180,k==='name')]));
+  settings.logoUrl=string(input.settings.logoUrl??'','Логотип',200);
+  if(settings.logoUrl&&!/^\/api\/media\?id=[a-f0-9-]{36}\.(png|webp|jpg)$/.test(settings.logoUrl))invalid('Используйте логотип, загруженный в кабинете.');
+  const paymentMethods=input.settings.enabledPaymentMethods??['card','sbp','cash','terminal'];
+  const allowedPaymentMethods=new Set(['card','sbp','cash','terminal']);
+  if(!Array.isArray(paymentMethods)||paymentMethods.length>allowedPaymentMethods.size||paymentMethods.some(method=>!allowedPaymentMethods.has(method))||new Set(paymentMethods).size!==paymentMethods.length)invalid('Проверьте подключённые способы оплаты.');
+  settings.enabledPaymentMethods=[...paymentMethods];
+  settings.showCourierTips=bool(input.settings.showCourierTips??false,'Чаевые курьеру');
   return {schemaVersion:2,categories:dishCategories,productCategories,dishes,products,branches,settings};
 }
 export function publicMenu(doc,{branchId,now=Date.now()}={}){

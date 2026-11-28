@@ -6,7 +6,7 @@ export const initialMenu = {
   products: [],
   revision: 0,
   updatedAt: null,
-  settings: {name:'Соф',tagline:'Закажите в «Соф».',phone:'',address:'',hours:'',deliveryNote:''},
+  settings: {name:'Соф',tagline:'Закажите в «Соф».',phone:'',address:'',hours:'',deliveryNote:'',logoUrl:'',enabledPaymentMethods:['card','sbp','cash','terminal'],showCourierTips:false},
   categories: [{id:'hot',name:'Горячее'},{id:'soups',name:'Супы'},{id:'breakfast',name:'Завтраки'},{id:'salads',name:'Салаты'},{id:'sides',name:'Гарниры'},{id:'fast-food',name:'Фастфуд'}],
   dishes: [
     {id:'plov',name:'Плов',price:450,weight:'450 г',categoryId:'hot',desc:'Состав блюда уточняется перед запуском.',imageUrl:'/assets/plov-cutout.webp',available:true,published:true},

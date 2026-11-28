@@ -21,7 +21,7 @@ async function harness({offline=false}={}){
   };
   const context={document,window,fetch,location:{hash:'',pathname:'/admin',search:''},history:{replaceState(){}},URL,URLSearchParams,Blob,crypto:webcrypto,Intl,FormData,confirm:()=>true,setTimeout:()=>1,clearTimeout(){},localStorage:{setItem(...args){storage.push(args);},getItem(){return null;}}};vm.createContext(context);
   const run=source=>vm.runInContext(source,context);
-  for(const file of ['menu-tools.js','iiko-editor.js','catalog-editor.js','admin.js'])run(fs.readFileSync('dist/admin/'+file,'utf8'));
+  for(const file of ['menu-tools.js','iiko-editor.js','catalog-editor.js','account-ui.js','admin.js'])run(fs.readFileSync('dist/admin/'+file,'utf8'));
   await tick();document.querySelector('[data-page=connections]').dispatchEvent(new window.Event('click',{bubbles:true}));await tick();await tick();
   return {document,window,run,requests,storage};
 }

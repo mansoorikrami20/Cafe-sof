@@ -28,7 +28,10 @@ test('server rejects invalid products, branch settings, overrides and cross-cata
     m=>m.products.push({...product(),id:'plov'}),m=>m.products.push({...product(),price:1.001}),
     m=>m.dishes[0].branchOverrides={'branch-9':assignment()},m=>m.dishes[0].branchOverrides={'branch-1':assignment({assigned:'yes'})},
     m=>m.dishes[0].branchOverrides={'branch-1':assignment({price:-1})},m=>m.products.push({...product(),categoryId:'hot'}),
-    m=>m.products.push({...product(),imageUrl:'https://tracking.example/a.png'})
+    m=>m.products.push({...product(),imageUrl:'https://tracking.example/a.png'}),
+    m=>m.settings.logoUrl='https://tracking.example/logo.png',
+    m=>m.settings.enabledPaymentMethods=['card','crypto'],
+    m=>m.settings.showCourierTips='yes'
   ]){const menu=clone();mutate(menu);assert.throws(()=>cleanMenu(menu),{status:400});}
 });
 test('branch projection applies assignments, independent prices, hiding, stock and global stop-list',()=>{
@@ -90,7 +93,7 @@ test('full catalog persists across handler restarts; two sessions cannot overwri
 });
 test('Blob adapter keeps private storage, conditional writes and conflict reporting',async()=>{
   const calls=[];const doc=configuredMenu();const storage=createStorage({get:async(key,options)=>{calls.push({key,options});return {statusCode:200,stream:new Blob([JSON.stringify(doc)]).stream(),blob:{etag:'test-etag'}};},put:async(...args)=>calls.push(args)});
-  const read=await storage.readStore();assert.equal(read.etag,'test-etag');assert.deepEqual(read.doc,doc);assert.deepEqual(calls[0].options,{access:'private',useCache:false});
+  const read=await storage.readStore();assert.equal(read.etag,'test-etag');assert.deepEqual(read.doc,doc);assert.deepEqual(calls[0].options,{access:'private',useCache:false,headers:{'Accept-Encoding':'identity'}});
   await storage.writeStore(doc,read.etag);const options=calls[1][2];assert.equal(options.ifMatch,'test-etag');assert.equal(options.access,'private');assert.equal(options.allowOverwrite,true);
   await storage.writeStore(doc,null);assert.equal(calls[2][2].allowOverwrite,false);assert(!('ifMatch' in calls[2][2]));
   class BlobPreconditionFailedError extends Error{};
